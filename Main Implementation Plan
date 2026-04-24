@@ -1,0 +1,50 @@
+# Luminary - Web Accessibility Compliance Auditor (Final Plan)
+
+**Project Goal:** An AI-powered tool that crawls websites, detects WCAG 2.2 violations, explains them in plain language, and generates a downloadable compliance report.
+
+## Tech Stack (Approved)
+*   **Architecture:** Monorepo using **Turborepo**
+*   **Frontend:** Next.js 14 (App Router), React, Tailwind CSS, **shadcn/ui**, Recharts
+*   **Backend:** Node.js, Express, **Playwright**, `axe-core`, BullMQ + Redis (for later phases)
+*   **AI:** Claude API (or equivalent LLM)
+*   **Auth & Database:** **Supabase** (PostgreSQL + Supabase Auth)
+*   **Infrastructure:** Vercel (Frontend), Railway or Render (Backend & Redis)
+
+---
+
+## Phase 1 — Foundation (Weeks 1–2)
+**Goal:** Get the core crawler working end-to-end.
+*   **Monorepo Setup:** Initialize Turborepo with `apps/web` (Next.js) and `apps/api` (Express).
+*   **Backend Crawler:** Create an Express API (`POST /scan`). Use Playwright to launch a headless browser, visit the URL, inject `axe-core`, run the audit, and return the JSON violations.
+*   **Frontend Landing Page:** Build a simple, aesthetically pleasing homepage with a URL input box and a "Scan now" button.
+*   **Raw Results View:** Display the raw violations list returned from the backend to prove the core loop works.
+
+## Phase 2 — AI Explainer + Dashboard (Weeks 3–5)
+**Goal:** AI-powered plain-language explanations and a premium dashboard.
+*   **AI Integration:** For each violation, send the rule ID, description, and HTML snippet to the LLM. Retrieve a plain-English explanation and code fix.
+*   **Score Engine:** Calculate a 0–100 accessibility score based on violation count and severity weights.
+*   **Dashboard UI:** Build the results dashboard using shadcn/ui and Recharts. Include a score circle, severity breakdown bar, filterable violations list, and expandable AI explanations.
+*   **UX:** Add premium loading states (Scanning → Analyzing → Generating Fixes).
+
+## Phase 3 — Auth + PDF Report (Weeks 6–7)
+**Goal:** User accounts and downloadable reports (Transforming into a SaaS).
+*   **Auth System:** Integrate Supabase Auth (Email + Google OAuth).
+*   **Database:** Set up Supabase PostgreSQL. Create tables: `users`, `scans`, `violations`. Save scan history.
+*   **Scan History Page:** Dashboard listing past scans with score trends.
+*   **PDF Generator:** Generate branded compliance reports (via PDFKit or similar).
+*   **Share Links:** Generate public, shareable URLs for scan results.
+
+## Phase 4 — Monitoring + Alerts (Weeks 8–10)
+**Goal:** Scheduled monitoring and email alerts.
+*   **Site Registration:** Allow users to add sites for weekly/monthly re-scans.
+*   **Job Queue:** Implement BullMQ + Redis to schedule and process background scans without blocking the main API.
+*   **Email Alerts:** Integrate Resend/SendGrid to notify users of score drops or new critical violations.
+*   **Trend Charts:** Display score trends over time for monitored sites.
+
+---
+
+## Next Immediate Steps (Executing Phase 1)
+1.  Initialize the Turborepo workspace.
+2.  Set up the Next.js `web` app.
+3.  Set up the Express `api` app.
+4.  Implement the Playwright + axe-core scanner endpoint.

@@ -62,8 +62,8 @@ function ScanResults() {
       </div>
 
       {loading && (
-        <div className="flex flex-col items-center justify-center p-12 bg-muted/30 rounded-lg border border-border border-dashed">
-          <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
+        <div className="flex flex-col items-center justify-center p-12 glass-3d-panel !border-dashed animate-popup delay-100">
+          <Loader2 className="h-10 w-10 text-[#3b83f5] animate-spin mb-4" />
           <h3 className="text-xl font-medium">Scanning in progress...</h3>
           <p className="text-muted-foreground mt-2 text-center max-w-md">
             Our headless browser is navigating to the site and running the axe-core accessibility audit. This might take 10-30 seconds.
@@ -72,7 +72,7 @@ function ScanResults() {
       )}
 
       {error && (
-        <div className="p-6 bg-destructive/10 text-destructive rounded-lg border border-destructive/20 flex items-start">
+        <div className="p-6 bg-destructive/10 backdrop-blur-2xl backdrop-saturate-200 text-destructive rounded-3xl border border-destructive/30 shadow-[0_20px_50px_-10px_rgba(255,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.2)] flex items-start transition-all animate-popup delay-100">
           <AlertCircle className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0" />
           <div>
             <h3 className="font-semibold mb-1">Error running scan</h3>
@@ -83,8 +83,8 @@ function ScanResults() {
 
       {results && (
         <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="p-6 bg-background rounded-lg border border-border shadow-sm flex flex-col justify-center items-center text-center">
+          <div className="grid gap-4 md:grid-cols-3 animate-popup delay-100">
+            <div className="p-6 flex flex-col justify-center items-center text-center hover:-translate-y-1 glass-3d-panel">
               <span className="text-4xl font-bold text-destructive mb-2">
                 {results.violations?.length || 0}
               </span>
@@ -93,11 +93,11 @@ function ScanResults() {
             {/* Will add score and other metrics in Phase 2 */}
           </div>
 
-          <div className="bg-background rounded-lg border border-border shadow-sm overflow-hidden">
-            <div className="p-4 bg-muted/50 border-b border-border">
+          <div className="overflow-hidden glass-3d-panel animate-popup delay-200">
+            <div className="p-4 bg-white/40 dark:bg-black/40 backdrop-blur-md border-b border-white/30 dark:border-white/10">
               <h3 className="font-medium">Raw JSON Data</h3>
             </div>
-            <div className="p-4 overflow-auto max-h-[600px] bg-zinc-950 text-zinc-50">
+            <div className="p-4 overflow-auto max-h-[600px] bg-zinc-950/80 backdrop-blur-md text-zinc-50">
               <pre className="text-xs">
                 {JSON.stringify(results, null, 2)}
               </pre>
@@ -111,8 +111,10 @@ function ScanResults() {
 
 export default function ScanPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>}>
+    <div className="min-h-screen bg-background relative overflow-hidden text-foreground selection:bg-[#3b83f5]/30">
+      <div className="absolute top-1/4 left-0 w-[500px] h-[500px] bg-[#2ecac5] opacity-10 blur-[100px] rounded-full pointer-events-none -z-10"></div>
+      <div className="absolute bottom-1/4 right-0 w-[500px] h-[500px] bg-[#3b83f5] opacity-10 blur-[100px] rounded-full pointer-events-none -z-10"></div>
+      <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-[#3b83f5]" /></div>}>
         <ScanResults />
       </Suspense>
     </div>

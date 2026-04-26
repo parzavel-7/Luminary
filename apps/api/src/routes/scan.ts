@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { scanUrl } from '../services/crawler';
+import { analyzeViolations } from '../services/ai';
+import { calculateScore } from '../services/scorer';
 
 const router = Router();
 
@@ -20,12 +22,20 @@ router.post('/', async (req: Request, res: Response) => {
 
     console.log(`Received scan request for: ${url}`);
     
-    // Run the scan
-    const violations = await scanUrl(url);
+    // 1. Run the scan
+    const rawViolations = await scanUrl(url);
+    
+    // 2. Calculate score
+    const { score, counts } = calculateScore(rawViolations);
+    
+    // 3. Run AI analysis
+    const analyzedViolations = await analyzeViolations(rawViolations);
     
     return res.status(200).json({
       url,
-      violations,
+      score,
+      counts,
+      violations: analyzedViolations,
       timestamp: new Date().toISOString()
     });
 

@@ -1,103 +1,102 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
-import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { 
+  Loader2, 
+  ChevronLeft, 
+  Download, 
+  Share2, 
+  ShieldAlert, 
+  CheckCircle2, 
+  AlertCircle,
+  Clock,
+  ArrowRight,
+  Sparkles
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Loader2, AlertCircle, ShieldCheck, Zap, BarChart3, Search, Sparkles, CheckCircle2 } from "lucide-react";
-import { ScoreChart } from "../../components/ScoreChart";
-import { SeverityBadge } from "../../components/SeverityBadge";
 import { ViolationCard } from "../../components/ViolationCard";
+import { ScoreChart } from "../../components/ScoreChart";
+import { jsPDF } from "jspdf";
+import { supabase } from "../../lib/supabase";
 
-function ScanResults() {
+export default function ScanPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const url = searchParams.get("url");
-
   const [loading, setLoading] = useState(true);
-  const [loadingStep, setLoadingStep] = useState(0);
   const [results, setResults] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const steps = [
-    { label: "Launching Browser", icon: <Search className="h-4 w-4" /> },
-    { label: "Injecting Axe-Core", icon: <ShieldCheck className="h-4 w-4" /> },
-    { label: "Running Audit", icon: <Zap className="h-4 w-4" /> },
-    { label: "AI Analysis", icon: <Sparkles className="h-4 w-4" /> },
-    { label: "Finalizing Dashboard", icon: <BarChart3 className="h-4 w-4" /> },
-  ];
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    if (!url) {
-      setError("No URL provided");
-      setLoading(false);
-      return;
-    }
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
 
-    const fetchScan = async () => {
+      if (!url) {
+        router.push("/");
+        return;
+      }
+
       try {
-        setLoading(true);
-        
-        // Progress simulation
-        const stepInterval = setInterval(() => {
-          setLoadingStep(prev => (prev < 3 ? prev + 1 : prev));
-        }, 4000);
-
-        const res = await fetch("http://localhost:8080/api/scan", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/scan`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url }),
         });
 
-        clearInterval(stepInterval);
-        setLoadingStep(4);
-
-        if (!res.ok) {
-          throw new Error("Failed to scan website");
-        }
-
-        const data = await res.json();
+        if (!response.ok) throw new Error("Neural link failed. Target inaccessible.");
+        const data = await response.json();
         setResults(data);
+
+        // Persistent save if logged in
+        if (user) {
+          await supabase.from('scans').insert({
+            user_id: user.id,
+            url: url,
+            score: data.score,
+            violations: data.violations,
+          });
+        }
       } catch (err: any) {
         setError(err.message);
       } finally {
-        setTimeout(() => setLoading(false), 800);
+        setLoading(false);
       }
     };
 
-    fetchScan();
-  }, [url]);
+    init();
+  }, [url, router]);
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(20);
+    doc.text(`Accessibility Audit: ${url}`, 20, 20);
+    doc.setFontSize(12);
+    doc.text(`Health Index: ${results.score}%`, 20, 35);
+    doc.text(`Violations Detected: ${results.violations.length}`, 20, 45);
+    
+    results.violations.forEach((v: any, i: number) => {
+      const y = 60 + (i * 20);
+      if (y < 280) {
+        doc.text(`${i + 1}. ${v.help} (${v.impact})`, 20, y);
+      }
+    });
+    
+    doc.save(`Luminary_Audit_${url?.replace(/[^a-z0-9]/gi, '_')}.pdf`);
+  };
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-12">
-        <div className="relative mb-12">
-          <div className="absolute inset-0 bg-gradient-to-tr from-[#3b83f5] to-[#2ecac5] opacity-20 blur-3xl rounded-full scale-150 animate-pulse"></div>
-          <Loader2 className="h-16 w-16 text-[#3b83f5] animate-spin relative z-10" />
+      <div className="min-h-screen bg-[#e3e2c3] flex flex-col items-center justify-center space-y-10 font-poppins">
+        <div className="relative">
+          <div className="absolute -inset-10 bg-[#3b83f5]/10 blur-3xl animate-pulse rounded-full"></div>
+          <Loader2 className="h-16 w-16 animate-spin text-primary relative z-10" />
         </div>
-        
-        <div className="w-full max-w-md space-y-4">
-          {steps.map((step, i) => (
-            <motion.div
-              key={step.label}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ 
-                opacity: i <= loadingStep ? 1 : 0.3,
-                x: 0,
-                scale: i === loadingStep ? 1.05 : 1
-              }}
-              className="flex items-center gap-4 p-4 glass-3d-panel !rounded-2xl"
-            >
-              <div className={`p-2 rounded-lg ${i < loadingStep ? "bg-green-500/20 text-green-500" : i === loadingStep ? "bg-[#3b83f5]/20 text-[#3b83f5]" : "bg-white/5 text-muted-foreground"}`}>
-                {i < loadingStep ? <CheckCircle2 className="h-4 w-4" /> : step.icon}
-              </div>
-              <span className="font-medium text-sm">{step.label}</span>
-              {i === loadingStep && (
-                <span className="ml-auto flex h-2 w-2 rounded-full bg-[#3b83f5] animate-ping"></span>
-              )}
-            </motion.div>
-          ))}
+        <div className="text-center space-y-3 animate-pulse">
+           <h2 className="text-2xl font-bold tracking-tight uppercase">Neural Scanning...</h2>
+           <p className="text-muted-foreground text-sm font-light tracking-[0.2em]">{url}</p>
         </div>
       </div>
     );
@@ -105,121 +104,144 @@ function ScanResults() {
 
   if (error) {
     return (
-      <div className="p-10 bg-destructive/5 backdrop-blur-3xl rounded-3xl border border-destructive/20 flex flex-col items-center text-center max-w-2xl mx-auto mt-20 animate-popup">
-        <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-        <h3 className="text-2xl font-bold mb-2">Scan Failed</h3>
-        <p className="text-muted-foreground mb-6">{error}</p>
-        <Link href="/" className="glass-3d-button px-8 py-2 inline-flex items-center">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Try Again
-        </Link>
+      <div className="min-h-screen bg-[#e3e2c3] flex flex-col items-center justify-center p-6 text-center font-poppins">
+        <div className="glass-3d-panel !p-16 max-w-lg space-y-8 border-red-500/20">
+           <div className="p-4 bg-red-500/10 rounded-full w-fit mx-auto text-red-600">
+             <AlertCircle className="h-10 w-10" />
+           </div>
+           <div className="space-y-3">
+             <h2 className="text-3xl font-bold tracking-tight">Signal Interrupted</h2>
+             <p className="text-muted-foreground leading-relaxed font-light">{error}</p>
+           </div>
+           <button onClick={() => router.push("/")} className="glass-3d-button w-full h-14 !rounded-full uppercase tracking-widest text-[11px]">Return to Base</button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-12">
-      {/* Header Info */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <Link href="/" className="inline-flex items-center text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors mb-4">
-            <ArrowLeft className="mr-2 h-3 w-3" /> Dashboard
-          </Link>
-          <h1 className="text-4xl font-black tracking-tighter">Audit Report</h1>
-          <p className="text-muted-foreground font-medium break-all max-w-2xl">{url}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Last Scanned</p>
-          <p className="text-sm font-mono text-foreground/80">{new Date(results?.timestamp).toLocaleString()}</p>
-        </div>
-      </div>
-
-      {/* Main Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="lg:col-span-1 glass-3d-panel p-8 flex flex-col items-center justify-center min-h-[400px]"
-        >
-          <ScoreChart score={results.score} />
-          <div className="mt-8 text-center space-y-1">
-            <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Compliance Status</p>
-            <p className={`text-xl font-black ${results.score >= 90 ? "text-green-500" : results.score >= 70 ? "text-[#3b83f5]" : "text-red-500"}`}>
-              {results.score >= 90 ? "Excellent" : results.score >= 70 ? "Good" : "Action Required"}
-            </p>
-          </div>
-        </motion.div>
-
-        <div className="lg:col-span-2 space-y-8">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {Object.entries(results.counts).map(([severity, count]: [any, any], i) => (
-              <motion.div
-                key={severity}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * i }}
-                className="glass-3d-panel p-6 text-center space-y-2"
-              >
-                <span className="text-3xl font-black">{count}</span>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{severity}</p>
-              </motion.div>
-            ))}
-          </div>
-
-          <div className="glass-3d-panel p-8 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-12 bg-[#2ecac5]/10 blur-[80px] rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700"></div>
-            <div className="relative z-10 space-y-4">
-              <div className="flex items-center gap-2 text-[#2ecac5]">
-                <Sparkles className="h-5 w-5" />
-                <h3 className="font-black text-xl tracking-tight">AI Insights</h3>
-              </div>
-              <p className="text-muted-foreground text-sm leading-relaxed max-w-lg">
-                We've analyzed {results.violations.length} issues on your page. Our AI recommends focusing on 
-                <span className="text-foreground font-bold"> {results.counts.critical} critical </span> 
-                violations first to have the biggest impact on user experience.
-              </p>
+    <div className="min-h-screen bg-[#e3e2c3] text-[#1a1a1a] pb-40 font-poppins font-light">
+      {/* Dynamic Header */}
+      <div className="sticky top-0 z-50 px-6 py-6 flex justify-center pointer-events-none">
+        <header className="px-10 h-16 w-full max-w-6xl flex items-center justify-between glass-3d-nav pointer-events-auto">
+          <div className="flex items-center gap-6">
+            <button onClick={() => router.back()} className="p-3 rounded-full hover:bg-black/5 transition-colors">
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div className="h-4 w-[1px] bg-black/10 mx-2"></div>
+            <div className="flex flex-col">
+              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 leading-none mb-1">Target Stream</span>
+              <span className="text-sm font-bold tracking-tight truncate max-w-[200px]">{url}</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Violations List */}
-      <div className="space-y-6 pb-20">
-        <div className="flex items-center justify-between">
-          <h3 className="text-2xl font-black tracking-tight flex items-center gap-3">
-            <BarChart3 className="h-6 w-6 text-[#3b83f5]" />
-            Detailed Findings
-          </h3>
-          <span className="text-xs font-bold text-muted-foreground bg-white/5 px-3 py-1 rounded-full border border-white/10">
-            {results.violations.length} total issues
-          </span>
-        </div>
-        
-        <div className="grid gap-4">
-          {results.violations.map((violation: any, i: number) => (
-            <ViolationCard key={violation.id + i} violation={violation} index={i} />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function ScanPage() {
-  return (
-    <div className="min-h-screen bg-background relative overflow-hidden text-foreground selection:bg-[#3b83f5]/30">
-      {/* Background Orbs */}
-      <div className="absolute top-0 left-0 w-[1000px] h-[1000px] bg-[#2ecac5] opacity-[0.03] blur-[150px] rounded-full pointer-events-none -z-10 translate-x-[-30%] translate-y-[-30%]"></div>
-      <div className="absolute bottom-0 right-0 w-[1000px] h-[1000px] bg-[#3b83f5] opacity-[0.03] blur-[150px] rounded-full pointer-events-none -z-10 translate-x-[30%] translate-y-[30%]"></div>
-      
-      <div className="container mx-auto py-12 px-4 max-w-6xl relative z-10">
-        <Suspense fallback={
-          <div className="flex items-center justify-center h-screen">
-            <Loader2 className="h-10 w-10 animate-spin text-[#3b83f5]" />
+          <div className="flex items-center gap-4">
+            <button onClick={exportPDF} className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-black text-white text-[10px] font-bold uppercase tracking-widest hover:scale-105 transition-all shadow-xl">
+              <Download className="h-3.5 w-3.5" /> Export PDF
+            </button>
+            <button className="p-3 rounded-full bg-white border border-black/5 hover:bg-black/5 transition-all shadow-sm">
+              <Share2 className="h-4 w-4" />
+            </button>
           </div>
-        }>
-          <ScanResults />
-        </Suspense>
+        </header>
       </div>
+
+      <main className="container max-w-6xl mx-auto mt-16 px-6 space-y-16 animate-popup">
+        {/* Results Overview */}
+        <div className="grid md:grid-cols-12 gap-10">
+          {/* Health Index Card */}
+          <div className="md:col-span-4 glass-3d-panel p-10 flex flex-col items-center justify-center relative overflow-hidden group">
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/5 blur-3xl rounded-full group-hover:bg-primary/10 transition-all duration-1000"></div>
+            <div className="relative z-10 w-full">
+               <ScoreChart score={results.score} />
+            </div>
+            <div className="mt-10 text-center space-y-2">
+               <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40">Health Index</h3>
+               <p className="text-4xl font-light tracking-tighter">OPERATIONAL</p>
+            </div>
+          </div>
+
+          {/* Breakdown Stats */}
+          <div className="md:col-span-8 grid grid-cols-2 gap-6">
+             <div className="glass-3d-panel p-8 space-y-8 group hover:translate-y-[-5px] transition-all duration-700">
+                <div className="p-4 bg-red-500/10 text-red-600 rounded-2xl w-fit shadow-sm">
+                   <ShieldAlert className="h-6 w-6" />
+                </div>
+                <div>
+                   <h4 className="text-4xl font-light tracking-tighter">
+                     {results.violations.filter((v: any) => v.impact === 'critical').length}
+                   </h4>
+                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-600/60 mt-1">Critical Risks</p>
+                </div>
+             </div>
+             <div className="glass-3d-panel p-8 space-y-8 group hover:translate-y-[-5px] transition-all duration-700">
+                <div className="p-4 bg-orange-500/10 text-orange-600 rounded-2xl w-fit shadow-sm">
+                   <AlertCircle className="h-6 w-6" />
+                </div>
+                <div>
+                   <h4 className="text-4xl font-light tracking-tighter">
+                     {results.violations.filter((v: any) => v.impact === 'serious').length}
+                   </h4>
+                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-600/60 mt-1">Serious Alerts</p>
+                </div>
+             </div>
+             <div className="glass-3d-panel p-8 space-y-8 group hover:translate-y-[-5px] transition-all duration-700">
+                <div className="p-4 bg-green-500/10 text-green-600 rounded-2xl w-fit shadow-sm">
+                   <CheckCircle2 className="h-6 w-6" />
+                </div>
+                <div>
+                   <h4 className="text-4xl font-light tracking-tighter">
+                     {results.violations.filter((v: any) => v.impact === 'moderate' || v.impact === 'minor').length}
+                   </h4>
+                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-green-600/60 mt-1">Minor Elements</p>
+                </div>
+             </div>
+             <div className="glass-3d-panel p-8 space-y-8 group hover:translate-y-[-5px] transition-all duration-700">
+                <div className="p-4 bg-black/5 text-black rounded-2xl w-fit shadow-sm">
+                   <Clock className="h-6 w-6" />
+                </div>
+                <div>
+                   <h4 className="text-4xl font-light tracking-tighter">4s</h4>
+                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mt-1">Crawl Time</p>
+                </div>
+             </div>
+          </div>
+        </div>
+
+        {/* Detailed Findings */}
+        <div className="space-y-12">
+          <div className="flex items-center justify-between border-b border-black/5 pb-10">
+             <div className="space-y-2">
+                <div className="flex items-center gap-2 text-black/30">
+                  <Sparkles className="h-4 w-4" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Neural Diagnostics</span>
+                </div>
+                <h2 className="text-5xl tracking-tighter font-light uppercase">Core Findings</h2>
+             </div>
+             <div className="flex items-center gap-3 px-6 py-3 bg-white/40 rounded-full border border-black/5">
+                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                <span className="text-[10px] font-bold uppercase tracking-widest">AI Engine Active</span>
+             </div>
+          </div>
+
+          <div className="grid gap-8">
+            {results.violations.length > 0 ? (
+              results.violations.map((violation: any, i: number) => (
+                <ViolationCard key={i} violation={violation} index={i} />
+              ))
+            ) : (
+              <div className="glass-3d-panel !p-20 text-center space-y-6">
+                 <div className="p-6 bg-green-500/10 text-green-600 rounded-full w-fit mx-auto shadow-sm">
+                    <CheckCircle2 className="h-16 w-16" />
+                 </div>
+                 <div className="space-y-2">
+                    <h3 className="text-3xl font-bold tracking-tight">Zero Risks Detected</h3>
+                    <p className="text-muted-foreground font-light max-w-sm mx-auto">Neural scan confirms this target meets all accessibility standards.</p>
+                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

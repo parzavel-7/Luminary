@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
+    "@supabase/supabase-js": "^2.104.1",
     "axe-core": "^4.11.3",
     "axe-playwright": "^2.2.2",
     "cors": "^2.8.6",

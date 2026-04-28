@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Code, Info, Sparkles } from "lucide-react";
-import { SeverityBadge } from "./SeverityBadge";
+import { AlertTriangle, ChevronDown, Code2, Lightbulb, Zap } from "lucide-react";
+import { useState } from "react";
 
 interface ViolationCardProps {
   violation: any;
@@ -13,25 +12,42 @@ interface ViolationCardProps {
 export function ViolationCard({ violation, index }: ViolationCardProps) {
   const [isOpen, setIsOpen] = useState(false);
 
+  const getImpactColor = (impact: string) => {
+    switch (impact) {
+      case "critical": return "text-red-600 bg-red-500/5 border-red-500/10";
+      case "serious": return "text-orange-600 bg-orange-500/5 border-orange-500/10";
+      default: return "text-primary bg-primary/5 border-primary/10";
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 * index }}
-      className="glass-3d-panel overflow-hidden"
+      transition={{ delay: index * 0.05 }}
+      className="glass-3d-panel border-white/60 overflow-hidden hover:shadow-2xl transition-all duration-700 group shadow-sm"
     >
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-5 text-left transition-colors hover:bg-white/5"
+        className="w-full p-10 flex items-center justify-between text-left"
       >
-        <div className="flex items-center gap-4">
-          <SeverityBadge severity={violation.impact} />
+        <div className="flex items-center gap-8">
+          <div className={`p-4 rounded-[1.5rem] border ${getImpactColor(violation.impact)} group-hover:scale-110 transition-transform duration-500`}>
+            <AlertTriangle className="h-7 w-7" />
+          </div>
           <div>
-            <h4 className="font-bold text-sm md:text-base">{violation.help}</h4>
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{violation.description}</p>
+            <h4 className="text-2xl font-bold tracking-tight text-[#1a1a1a]">{violation.help}</h4>
+            <div className="flex items-center gap-4 mt-3">
+              <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border ${getImpactColor(violation.impact)}`}>
+                {violation.impact}
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/20">{violation.id}</span>
+            </div>
           </div>
         </div>
-        <ChevronDown className={cn("h-5 w-5 transition-transform duration-300", isOpen ? "rotate-180" : "")} />
+        <div className={`p-4 rounded-2xl bg-black/5 text-black/20 transition-all duration-500 ${isOpen ? "rotate-180 bg-black text-white" : "group-hover:bg-black/10 group-hover:text-black"}`}>
+          <ChevronDown className="h-6 w-6" />
+        </div>
       </button>
 
       <AnimatePresence>
@@ -40,60 +56,49 @@ export function ViolationCard({ violation, index }: ViolationCardProps) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="p-5 pt-0 border-t border-white/10 space-y-6 mt-4">
-              {/* AI Explanation Section */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-[#2ecac5]">
-                  <Sparkles className="h-4 w-4" />
-                  <span className="text-xs font-bold uppercase tracking-wider">AI Analysis</span>
-                </div>
-                <div className="p-4 rounded-2xl bg-[#2ecac5]/5 border border-[#2ecac5]/20">
-                  <p className="text-sm leading-relaxed">
-                    {violation.aiExplanation || "Analysis pending..."}
+            <div className="p-12 pt-0 space-y-12 border-t border-black/[0.02] bg-white/20">
+              <div className="grid md:grid-cols-2 gap-12 pt-12">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 text-black/40">
+                    <Lightbulb className="h-5 w-5" />
+                    <span className="text-[11px] font-bold uppercase tracking-[0.3em]">Violation Logic</span>
+                  </div>
+                  <p className="text-muted-foreground text-lg leading-relaxed font-light">
+                    {violation.ai_explanation || violation.description}
                   </p>
                 </div>
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 text-black/40">
+                    <Zap className="h-5 w-5" />
+                    <span className="text-[11px] font-bold uppercase tracking-[0.3em]">AI Recovery Code</span>
+                  </div>
+                  <div className="relative group/code">
+                    <div className="absolute -inset-4 bg-gradient-to-r from-[#3b83f5] to-[#2ecac5] opacity-0 group-hover/code:opacity-20 blur-2xl transition-opacity duration-700"></div>
+                    <pre className="relative p-8 bg-[#0e0e0f] border border-white/10 rounded-3xl overflow-x-auto text-sm font-mono shadow-2xl">
+                      <code className="text-[#3b83f5]">{violation.ai_fix || "// Reference element attributes below"}</code>
+                    </pre>
+                  </div>
+                </div>
               </div>
 
-              {/* Code Fix Section */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-[#3b83f5]">
-                  <Code className="h-4 w-4" />
-                  <span className="text-xs font-bold uppercase tracking-wider">Suggested Fix</span>
-                </div>
-                <div className="p-4 rounded-2xl bg-zinc-950/80 font-mono text-xs overflow-x-auto border border-white/10">
-                  <pre className="text-zinc-300">
-                    {violation.aiFix || "Fix not available."}
-                  </pre>
-                </div>
-              </div>
-
-              {/* Technical Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Info className="h-3 w-3" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Rule ID</span>
+              {violation.nodes && violation.nodes.length > 0 && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 text-black/40">
+                    <Code2 className="h-5 w-5" />
+                    <span className="text-[11px] font-bold uppercase tracking-[0.3em]">Target Elements</span>
                   </div>
-                  <code className="text-[10px] px-2 py-1 rounded bg-white/5 border border-white/10 block w-fit">
-                    {violation.id}
-                  </code>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Info className="h-3 w-3" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">WCAG Tags</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {violation.tags.map((tag: string) => (
-                      <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10">
-                        {tag}
-                      </span>
+                  <div className="flex flex-wrap gap-3">
+                    {violation.nodes.map((node: any, i: number) => (
+                      <code key={i} className="px-4 py-2 bg-black/[0.03] border border-black/5 rounded-xl text-xs font-mono text-black/60 shadow-sm">
+                        {node.target[0]}
+                      </code>
                     ))}
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -101,6 +106,3 @@ export function ViolationCard({ violation, index }: ViolationCardProps) {
     </motion.div>
   );
 }
-
-// Helper to avoid duplicate cn import if not already handled
-import { cn } from "../lib/utils";

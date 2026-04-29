@@ -15,8 +15,9 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Luminary | AI-Powered Accessibility Auditor",
-  description: "Crawl any website, detect WCAG 2.2 violations, and get plain-language explanations with exact code fixes in seconds.",
+  title: "Luminary",
+  description:
+    "Crawl any website, detect WCAG 2.2 violations, and get plain-language explanations with exact code fixes in seconds.",
   icons: {
     icon: "/logo-favicon.png",
   },
@@ -29,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body 
+      <body
         className={`${inter.variable} ${poppins.variable} font-poppins antialiased bg-[#e3e2c3] text-[#1a1a1a] font-light`}
         suppressHydrationWarning
       >

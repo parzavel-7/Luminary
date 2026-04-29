@@ -18,7 +18,8 @@ import {
   ShieldCheck,
   Download,
   ExternalLink,
-  Loader2
+  Loader2,
+  User as UserIcon
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -76,13 +77,13 @@ export default function DashboardPage() {
               <LayoutDashboard className="h-5 w-5" />
               <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Command Center</span>
            </button>
+           <Link href="/profile" className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
+              <UserIcon className="h-5 w-5 group-hover:text-black transition-colors" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Profile</span>
+           </Link>
            <button className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
               <History className="h-5 w-5 group-hover:text-black transition-colors" />
               <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Audit Archive</span>
-           </button>
-           <button className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
-              <Activity className="h-5 w-5 group-hover:text-black transition-colors" />
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Performance</span>
            </button>
            <button className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
               <Settings className="h-5 w-5 group-hover:text-black transition-colors" />
@@ -93,10 +94,10 @@ export default function DashboardPage() {
         <div className="pt-10 border-t border-black/5">
            <div className="flex items-center gap-4 px-5 py-4 mb-8 bg-black/5 rounded-3xl">
               <div className="h-11 w-11 rounded-2xl bg-gradient-to-tr from-[#3b83f5] to-[#2ecac5] flex items-center justify-center font-black text-white shadow-md">
-                 {user?.email?.charAt(0).toUpperCase()}
+                 {(user?.user_metadata?.username || user?.email)?.charAt(0).toUpperCase()}
               </div>
               <div className="overflow-hidden">
-                 <p className="text-[11px] font-bold uppercase tracking-widest truncate">{user?.email?.split('@')[0]}</p>
+                 <p className="text-[11px] font-bold uppercase tracking-widest truncate">{user?.user_metadata?.username || user?.email?.split('@')[0]}</p>
                  <p className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-[0.2em]">Operative Level 3</p>
               </div>
            </div>
@@ -119,8 +120,8 @@ export default function DashboardPage() {
                  <h1 className="text-6xl font-light tracking-tighter leading-none uppercase">Command Center</h1>
                  <p className="text-muted-foreground font-light text-lg">Monitoring {scans.length} active audit streams across your estate.</p>
               </div>
-              <Link href="/" className="glass-3d-button h-16 px-10 text-[11px] font-bold uppercase tracking-[0.3em] !rounded-full">
-                 <Plus className="h-4 w-4" /> New Audit
+              <Link href="/" className="glass-3d-button h-16 px-10 text-[11px] font-bold uppercase tracking-[0.3em] !rounded-full flex items-center gap-3">
+                 <Plus className="h-5 w-5" /> Add Audit
               </Link>
            </div>
 

@@ -5,9 +5,17 @@ import { supabase } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Mail, Lock, Loader2, LogIn } from "lucide-react";
+import {
+  ArrowLeft,
+  Mail,
+  Lock,
+  Loader2,
+  LogIn,
+  ShieldCheck,
+  ArrowRight,
+} from "lucide-react";
 import { FaGoogle, FaGithub } from "react-icons/fa";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -21,25 +29,24 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    console.log("Attempting login for:", email);
-
     try {
+      if (!supabase) {
+        throw new Error("Connection issue. Please try again.");
+      }
+
       const { data, error: loginError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (loginError) {
-        console.error("Login error:", loginError);
         setError(loginError.message);
       } else {
-        console.log("Login success:", data);
         router.push("/dashboard");
         router.refresh();
       }
     } catch (err: any) {
-      console.error("Unexpected login error:", err);
-      setError("Neural link failure. Please try again.");
+      setError("Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -50,151 +57,198 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : undefined,
+          redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined,
         },
       });
       if (error) throw error;
     } catch (err: any) {
-      setError(`OAuth signal failed: ${err.message}`);
+      setError(`Login failed: ${err.message}`);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#e3e2c3] text-[#1a1a1a] flex flex-col items-center justify-center p-6 font-poppins font-light">
-      <Link
-        href="/"
-        className="absolute top-12 left-12 flex items-center gap-3 group"
-      >
-        <div className="p-3 rounded-full bg-white border border-black/5 group-hover:scale-110 transition-transform shadow-sm">
-          <ArrowLeft className="h-4 w-4" />
+    <div className="min-h-screen bg-[#e3e2c3] text-[#1a1a1a] flex overflow-hidden font-poppins">
+      {/* Left Side: Illustration */}
+      <div className="hidden lg:flex w-1/2 relative items-center justify-center bg-white/20">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-blue-500/5 blur-[120px] rounded-full animate-pulse" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-purple-600/5 blur-[120px] rounded-full animate-pulse delay-700" />
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-black transition-colors">
-          Home
-        </span>
-      </Link>
 
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.5 }}
-        className="w-full max-w-xl url-box-container !p-4"
-      >
-        <div className="bg-white/90 rounded-[3rem] p-12 md:p-16 space-y-12 shadow-2xl border border-black/[0.03]">
-          <div className="text-center space-y-4">
-            <div className="h-16 w-16 flex items-center justify-center mx-auto mb-8 transition-transform duration-1000 hover:scale-110">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 2, ease: "easeOut" }}
+          className="relative z-10 text-center"
+        >
+          <div className="relative">
+            <motion.div
+              animate={{ 
+                rotate: [0, -5, 0, 5, 0],
+                scale: [1, 1.02, 1]
+              }}
+              transition={{ 
+                duration: 10, 
+                repeat: Infinity,
+                ease: "easeInOut" 
+              }}
+              className="relative z-20"
+            >
               <Image
                 src="/logo.png"
-                alt="Logo"
-                width={60}
-                height={60}
-                className="scale-[2.8]"
+                alt="Luminary Star"
+                width={400}
+                height={400}
+                className="drop-shadow-[0_20px_50px_rgba(0,0,0,0.05)]"
               />
-            </div>
-            <h1 className="text-4xl font-bold tracking-tight text-gradient">
-              Luminary
-            </h1>
-            <p className="text-muted-foreground text-sm font-light leading-relaxed">
-              Welcome back, operative. <br />
-              Access your secure portal.
-            </p>
+            </motion.div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-r from-blue-500/10 to-purple-500/10 blur-[100px] rounded-full z-10" />
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-8">
-            <div className="space-y-3">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 ml-5">
-                Identity Email
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 1 }}
+            className="mt-12 space-y-4"
+          >
+            <h2 className="text-5xl font-bold tracking-tighter text-[#1a1a1a]">
+              Luminary
+            </h2>
+            <p className="text-[#1a1a1a]/40 text-lg font-light tracking-wide max-w-md mx-auto">
+              Welcome back. Log in to your account.
+            </p>
+          </motion.div>
+        </motion.div>
+      </div>
+
+      {/* Right Side: Form */}
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8 md:p-16 relative">
+        <Link
+          href="/"
+          className="absolute top-8 left-8 flex items-center gap-2 group"
+        >
+          <div className="p-2 rounded-full bg-black/5 border border-black/5 group-hover:bg-black/10 transition-all">
+            <ArrowLeft className="h-4 w-4" />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1a1a1a]/40 group-hover:text-[#1a1a1a] transition-colors">
+            Back Home
+          </span>
+        </Link>
+
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 1 }}
+          className="w-full max-w-md space-y-10"
+        >
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3b83f5]/10 border border-[#3b83f5]/20 mb-4">
+              <ShieldCheck className="h-3 w-3 text-[#3b83f5]" />
+              <span className="text-[9px] font-bold uppercase tracking-widest text-[#3b83f5]">Member Access</span>
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight">Log in</h1>
+            <p className="text-[#1a1a1a]/40 font-light">Enter your details below.</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1a1a1a]/30 ml-1">
+                Email
               </label>
-              <div className="relative">
-                <Mail className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-black/20" />
+              <div className="relative group">
+                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-black/20 group-focus-within:text-[#3b83f5] transition-colors" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-20 rounded-[2.5rem] pl-16 pr-8 bg-black/[0.02] border border-black/[0.05] focus:bg-white focus:border-[#3b83f5]/30 outline-none transition-all text-base font-medium shadow-inner"
-                  placeholder="agent@organization.ai"
+                  className="w-full h-14 bg-white/50 border border-black/5 rounded-2xl pl-14 pr-5 focus:bg-white focus:border-[#3b83f5]/50 outline-none transition-all text-sm shadow-sm"
+                  placeholder="name@example.com"
                 />
               </div>
             </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 ml-5">
-                Security Key
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1a1a1a]/30 ml-1">
+                Password
               </label>
-              <div className="relative">
-                <Lock className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-black/20" />
+              <div className="relative group">
+                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-black/20 group-focus-within:text-[#3b83f5] transition-colors" />
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-20 rounded-[2.5rem] pl-16 pr-8 bg-black/[0.02] border border-black/[0.05] focus:bg-white focus:border-[#3b83f5]/30 outline-none transition-all text-base font-medium shadow-inner"
+                  className="w-full h-14 bg-white/50 border border-black/5 rounded-2xl pl-14 pr-5 focus:bg-white focus:border-[#3b83f5]/50 outline-none transition-all text-sm shadow-sm"
                   placeholder="••••••••"
                 />
               </div>
             </div>
 
-            {error && (
-              <motion.p 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-red-500 text-[11px] font-bold text-center bg-red-500/5 py-5 rounded-3xl border border-red-500/10"
-              >
-                {error}
-              </motion.p>
-            )}
+            <AnimatePresence mode="wait">
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="p-4 rounded-xl bg-red-500/5 border border-red-500/10 text-red-600 text-[11px] font-medium flex items-center gap-3"
+                >
+                  <div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                  {error}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-20 glass-3d-button uppercase tracking-[0.3em] text-[11px] font-bold flex items-center justify-center gap-4 !rounded-full shadow-2xl"
+              className="w-full h-14 bg-[#3b83f5] hover:bg-[#3b83f5]/90 disabled:bg-[#3b83f5]/50 text-white rounded-2xl font-bold text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20 active:scale-[0.98]"
             >
               {loading ? (
-                <Loader2 className="h-6 w-6 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  <LogIn className="h-5 w-5" />
-                  Initiate Login
+                  <LogIn className="h-4 w-4" />
+                  Log in
                 </>
               )}
             </button>
+
+            <p className="text-center text-[11px] font-medium text-[#1a1a1a]/60 mt-4">
+              Don't have an account?{" "}
+              <Link href="/signup" className="text-[#3b83f5] hover:underline font-bold">
+                Sign up
+              </Link>
+            </p>
           </form>
 
-          <div className="relative flex items-center py-4">
-            <div className="flex-grow border-t border-black/5"></div>
-            <span className="flex-shrink mx-8 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/30">
-              Social Hub
-            </span>
-            <div className="flex-grow border-t border-black/5"></div>
+          <div className="relative py-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-black/5"></div>
+            </div>
+            <div className="relative flex justify-center text-[10px] uppercase tracking-[0.3em] font-bold">
+              <span className="bg-[#e3e2c3] px-4 text-black/20">Other options</span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4">
             <button
               onClick={() => handleOAuthLogin("github")}
-              className="h-16 border border-black/5 bg-white/40 rounded-3xl flex items-center justify-center gap-3 hover:bg-white/80 transition-all text-[10px] font-bold uppercase tracking-widest shadow-sm"
+              className="h-12 bg-white/40 border border-black/5 rounded-xl flex items-center justify-center gap-3 hover:bg-white transition-all text-[10px] font-bold uppercase tracking-widest shadow-sm"
             >
-              <FaGithub className="h-5 w-5 text-black/40" />
+              <FaGithub className="h-4 w-4 text-black/40" />
               Github
             </button>
             <button
               onClick={() => handleOAuthLogin("google")}
-              className="h-16 border border-black/5 bg-white/40 rounded-3xl flex items-center justify-center gap-3 hover:bg-white/80 transition-all text-[10px] font-bold uppercase tracking-widest shadow-sm"
+              className="h-12 bg-white/40 border border-black/5 rounded-xl flex items-center justify-center gap-3 hover:bg-white transition-all text-[10px] font-bold uppercase tracking-widest shadow-sm"
             >
-              <FaGoogle className="h-5 w-5 text-black/40" />
+              <FaGoogle className="h-4 w-4 text-black/40" />
               Google
             </button>
           </div>
-
-          <p className="text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 pt-6">
-            No identity yet?{" "}
-            <Link
-              href="/signup"
-              className="text-black font-black hover:underline underline-offset-4"
-            >
-              Enroll Now
-            </Link>
-          </p>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }

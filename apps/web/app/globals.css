@@ -58,7 +58,7 @@
 
   /* More Visible URL Box */
   .url-box-container {
-    @apply bg-white/60 backdrop-blur-3xl border-[2px] border-white p-4 rounded-full shadow-[0_30px_70px_rgba(0,0,0,0.12)];
+    @apply bg-white/60 backdrop-blur-3xl border-[2px] border-white p-4 rounded-full shadow-[0_40px_100px_-15px_rgba(0,0,0,0.15),0_20px_50px_-10px_rgba(0,0,0,0.05)];
   }
 
   .url-box-input-wrapper {

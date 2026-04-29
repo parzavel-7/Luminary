@@ -17,7 +17,17 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { ViolationCard } from "../../components/ViolationCard";
 import { ScoreChart } from "../../components/ScoreChart";
-import { jsPDF } from "jspdf";
+import dynamic from "next/dynamic";
+
+const ExportPDF = dynamic(() => import("../../components/ExportPDF"), { 
+  ssr: false,
+  loading: () => (
+    <button className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-black/5 text-black/20 text-[10px] font-bold uppercase tracking-widest cursor-wait">
+      <Download className="h-3.5 w-3.5" /> Loading...
+    </button>
+  )
+});
+
 import { supabase } from "../../lib/supabase";
 
 export default function ScanPage() {
@@ -69,23 +79,6 @@ export default function ScanPage() {
     init();
   }, [url, router]);
 
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(20);
-    doc.text(`Accessibility Audit: ${url}`, 20, 20);
-    doc.setFontSize(12);
-    doc.text(`Health Index: ${results.score}%`, 20, 35);
-    doc.text(`Violations Detected: ${results.violations.length}`, 20, 45);
-    
-    results.violations.forEach((v: any, i: number) => {
-      const y = 60 + (i * 20);
-      if (y < 280) {
-        doc.text(`${i + 1}. ${v.help} (${v.impact})`, 20, y);
-      }
-    });
-    
-    doc.save(`Luminary_Audit_${url?.replace(/[^a-z0-9]/gi, '_')}.pdf`);
-  };
 
   if (loading) {
     return (
@@ -135,9 +128,7 @@ export default function ScanPage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={exportPDF} className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-black text-white text-[10px] font-bold uppercase tracking-widest hover:scale-105 transition-all shadow-xl">
-              <Download className="h-3.5 w-3.5" /> Export PDF
-            </button>
+            <ExportPDF url={url || ""} results={results} />
             <button className="p-3 rounded-full bg-white border border-black/5 hover:bg-black/5 transition-all shadow-sm">
               <Share2 className="h-4 w-4" />
             </button>

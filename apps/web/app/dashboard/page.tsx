@@ -21,12 +21,16 @@ import {
   Loader2,
   User as UserIcon
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import TrendChart from "../../components/TrendChart";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [scans, setScans] = useState<any[]>([]);
+  const [monitoredSites, setMonitoredSites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [newUrl, setNewUrl] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -36,22 +40,68 @@ export default function DashboardPage() {
         router.push("/login");
       } else {
         setUser(user);
-        setScans([
-          { id: '1', url: 'https://apple.com', score: 94, status: 'Healthy', date: 'Oct 24, 2023', critical: 0, serious: 2 },
-          { id: '2', url: 'https://github.com', score: 88, status: 'Healthy', date: 'Oct 23, 2023', critical: 0, serious: 5 },
-          { id: '3', url: 'https://stripe.com', score: 76, status: 'Action Required', date: 'Oct 21, 2023', critical: 2, serious: 12 },
-          { id: '4', url: 'https://vercel.com', score: 92, status: 'Healthy', date: 'Oct 20, 2023', critical: 0, serious: 3 },
-        ]);
+        
+        // Fetch real scans
+        const { data: scanData } = await supabase
+          .from('scans')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (scanData) setScans(scanData);
+
+        // Fetch monitored sites
+        const { data: monitorData } = await supabase
+          .from('monitored_sites')
+          .select('*')
+          .eq('user_id', user.id);
+        
+        if (monitorData) setMonitoredSites(monitorData);
+        
         setLoading(false);
       }
     };
     checkUser();
   }, [router]);
 
+  const handleRegisterMonitoring = async () => {
+    if (!newUrl) return;
+    setIsAdding(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/monitoring/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: newUrl,
+          userId: user.id,
+          frequency: 'weekly'
+        })
+      });
+      if (response.ok) {
+        const { site } = await response.json();
+        setMonitoredSites([...monitoredSites, site]);
+        setNewUrl("");
+      }
+    } catch (error) {
+      console.error("Failed to register site:", error);
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/");
   };
+
+  const trendData = scans
+    .filter(s => s.created_at && s.score != null) // Guard against null/missing values
+    .slice(0, 10)
+    .reverse()
+    .map(s => ({
+      date: new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      score: Number(s.score)
+    }));
 
   if (loading) {
     return (
@@ -63,7 +113,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#e3e2c3] text-[#1a1a1a] flex overflow-hidden font-poppins font-light">
-      {/* Sidebar */}
+      {/* Sidebar - Same as before but with real data */}
       <aside className="w-80 border-r border-black/5 bg-white/60 backdrop-blur-3xl p-10 flex flex-col gap-16 relative z-20 shadow-xl shadow-black/[0.02]">
         <Link href="/" className="flex items-center gap-4 group px-2">
           <div className="h-12 w-12 flex items-center justify-center transition-transform duration-1000 group-hover:scale-110">
@@ -125,41 +175,95 @@ export default function DashboardPage() {
               </Link>
            </div>
 
-           {/* Stats Row */}
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="glass-3d-panel p-10 space-y-6 group hover:translate-y-[-5px] transition-all duration-700">
-                 <div className="flex justify-between items-start">
-                    <div className="p-4 w-fit rounded-2xl bg-gradient-to-br from-[#3b83f5] to-[#2ecac5] text-white shadow-lg">
-                       <BarChart3 className="h-6 w-6" />
+           {/* Stats & Trends */}
+           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+              <div className="lg:col-span-2">
+                 <TrendChart data={trendData} />
+              </div>
+              <div className="glass-3d-panel p-10 flex flex-col justify-between">
+                 <div>
+                    <div className="p-4 w-fit rounded-2xl bg-gradient-to-br from-[#3b83f5] to-[#2ecac5] text-white shadow-lg mb-6">
+                       <Activity className="h-6 w-6" />
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-green-600">Optimal +12%</span>
+                    <h3 className="text-4xl font-light tracking-tighter">
+                      {scans.length > 0 ? (scans.reduce((acc, s) => acc + s.score, 0) / scans.length).toFixed(1) : '0'}%
+                    </h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 mt-1">Average Health Index</p>
                  </div>
-                 <div>
-                    <h3 className="text-5xl font-light tracking-tighter">88.4%</h3>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 mt-1">Global Health Index</p>
-                 </div>
-              </div>
-              <div className="glass-3d-panel p-10 space-y-6 group hover:translate-y-[-5px] transition-all duration-700">
-                 <div className="p-4 w-fit rounded-2xl bg-gradient-to-br from-[#3b83f5] to-[#2ecac5] text-white shadow-lg">
-                    <ShieldCheck className="h-6 w-6" />
-                 </div>
-                 <div>
-                    <h3 className="text-5xl font-light tracking-tighter">24</h3>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 mt-1">Active Operations</p>
-                 </div>
-              </div>
-              <div className="glass-3d-panel p-10 space-y-6 group hover:translate-y-[-5px] transition-all duration-700">
-                 <div className="p-4 w-fit rounded-2xl bg-gradient-to-br from-[#3b83f5] to-[#2ecac5] text-white shadow-lg">
-                    <Activity className="h-6 w-6" />
-                 </div>
-                 <div>
-                    <h3 className="text-5xl font-light tracking-tighter">12</h3>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 mt-1">Risks Detected</p>
+                 <div className="pt-8 border-t border-black/5 mt-8">
+                    <p className="text-[11px] font-bold uppercase tracking-widest mb-4">Active Operations</p>
+                    <div className="flex -space-x-3">
+                       {[1,2,3,4].map(i => (
+                          <div key={i} className="h-10 w-10 rounded-full border-2 border-white bg-[#3b83f5] flex items-center justify-center text-[10px] font-bold text-white">
+                             {i}
+                          </div>
+                       ))}
+                       <div className="h-10 w-10 rounded-full border-2 border-white bg-black/5 flex items-center justify-center text-[10px] font-bold">
+                          +{scans.length}
+                       </div>
+                    </div>
                  </div>
               </div>
            </div>
 
-           {/* Recent Audits */}
+           {/* Watchlist Section */}
+           <div className="space-y-10">
+              <div className="flex items-center justify-between border-b border-black/5 pb-10">
+                 <h2 className="text-3xl font-light tracking-tighter uppercase flex items-center gap-4">
+                    <ShieldCheck className="h-8 w-8 text-black/10" /> Site Watchlist
+                 </h2>
+                 <div className="flex gap-4">
+                    <input 
+                      value={newUrl}
+                      onChange={(e) => setNewUrl(e.target.value)}
+                      className="h-14 w-80 px-6 bg-white/40 border border-black/5 rounded-full text-[11px] font-bold uppercase tracking-widest outline-none focus:bg-white transition-all shadow-sm" 
+                      placeholder="Enter URL to monitor..." 
+                    />
+                    <button 
+                      onClick={handleRegisterMonitoring}
+                      disabled={isAdding}
+                      className="glass-3d-button h-14 px-8 text-[10px] font-bold uppercase tracking-widest !rounded-full disabled:opacity-50"
+                    >
+                       {isAdding ? 'Registering...' : 'Monitor Site'}
+                    </button>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                 {monitoredSites.map((site) => (
+                    <motion.div 
+                      key={site.id}
+                      className="glass-3d-panel p-8 space-y-6 group hover:translate-y-[-5px] transition-all duration-700"
+                    >
+                       <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                             <h4 className="font-bold text-lg truncate w-40">{site.url.replace('https://', '')}</h4>
+                             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40">Frequency: {site.frequency}</p>
+                          </div>
+                          <div className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest ${site.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                             {site.active ? 'Live' : 'Paused'}
+                          </div>
+                       </div>
+                       <div className="flex items-end justify-between">
+                          <div>
+                             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-1">Last Score</p>
+                             <p className="text-3xl font-bold">{site.last_score || 'N/A'}%</p>
+                          </div>
+                          <Link href={`/scan?url=${encodeURIComponent(site.url)}`} className="h-12 w-12 rounded-full bg-black/5 flex items-center justify-center hover:bg-black hover:text-white transition-all">
+                             <ExternalLink className="h-5 w-5" />
+                          </Link>
+                       </div>
+                    </motion.div>
+                 ))}
+                 {monitoredSites.length === 0 && (
+                    <div className="col-span-full py-16 text-center border-2 border-dashed border-black/5 rounded-3xl">
+                       <p className="text-muted-foreground text-[11px] font-bold uppercase tracking-widest">No sites currently in watchlist.</p>
+                    </div>
+                 )}
+              </div>
+           </div>
+
+           {/* Recent Audits Log */}
            <div className="space-y-10">
               <div className="flex items-center justify-between border-b border-black/5 pb-10">
                  <h2 className="text-3xl font-light tracking-tighter uppercase flex items-center gap-4">
@@ -189,7 +293,7 @@ export default function DashboardPage() {
                                 {scan.url}
                                 <ExternalLink className="h-4 w-4 text-black/10 group-hover:text-primary transition-colors ml-2" />
                              </h4>
-                             <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40">{scan.date}</p>
+                             <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40">{new Date(scan.created_at).toDateString()}</p>
                           </div>
                        </div>
 
@@ -209,6 +313,12 @@ export default function DashboardPage() {
                        </div>
                     </motion.div>
                  ))}
+                 {scans.length === 0 && (
+                    <div className="py-20 text-center glass-3d-panel border-dashed border-2">
+                       <p className="text-muted-foreground uppercase tracking-widest font-bold text-sm">No scan history available.</p>
+                       <Link href="/" className="inline-block mt-6 text-[#3b83f5] font-bold uppercase tracking-widest text-[10px] hover:underline underline-offset-8">Run your first audit →</Link>
+                    </div>
+                 )}
               </div>
            </div>
         </div>

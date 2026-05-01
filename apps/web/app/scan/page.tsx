@@ -2,6 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { 
   Loader2, 
   ChevronLeft, 
@@ -12,7 +13,8 @@ import {
   AlertCircle,
   Clock,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  LayoutDashboard
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ViolationCard } from "../../components/ViolationCard";
@@ -33,27 +35,48 @@ import { supabase } from "../../lib/supabase";
 export default function ScanPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const url = searchParams.get("url");
+  // Capture the URL immediately into state, then hide it from the address bar
+  const [scanUrl, setScanUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
 
+  // On mount: grab URL from params, save to state, then clean the address bar
   useEffect(() => {
+    const rawUrl = searchParams.get("url");
+    if (!rawUrl) {
+      router.push("/");
+      return;
+    }
+    setScanUrl(rawUrl);
+    // Replace the browser URL with a clean path — no query string exposed
+    window.history.replaceState(null, '', '/scan');
+  }, []);
+
+  // Set dynamic browser tab title
+  useEffect(() => {
+    if (loading) {
+      document.title = 'Luminary — Scanning...';
+    } else if (error) {
+      document.title = 'Luminary — Scan Failed';
+    } else if (results) {
+      document.title = `Luminary — Results`;
+    }
+  }, [loading, error, results]);
+
+  useEffect(() => {
+    if (!scanUrl) return; // Wait until URL is captured from params
+
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
 
-      if (!url) {
-        router.push("/");
-        return;
-      }
-
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/scan`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/scan`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url }),
+          body: JSON.stringify({ url: scanUrl }),
         });
 
         if (!response.ok) throw new Error("Neural link failed. Target inaccessible.");
@@ -64,9 +87,9 @@ export default function ScanPage() {
         if (user) {
           await supabase.from('scans').insert({
             user_id: user.id,
-            url: url,
+            url: scanUrl,
             score: data.score,
-            violations: data.violations,
+            results: JSON.stringify(data.violations),
           });
         }
       } catch (err: any) {
@@ -77,7 +100,7 @@ export default function ScanPage() {
     };
 
     init();
-  }, [url, router]);
+  }, [scanUrl]);
 
 
   if (loading) {
@@ -89,7 +112,7 @@ export default function ScanPage() {
         </div>
         <div className="text-center space-y-3 animate-pulse">
            <h2 className="text-2xl font-bold tracking-tight uppercase">Neural Scanning...</h2>
-           <p className="text-muted-foreground text-sm font-light tracking-[0.2em]">{url}</p>
+           <p className="text-muted-foreground text-sm font-light tracking-[0.2em]">{scanUrl}</p>
         </div>
       </div>
     );
@@ -118,17 +141,21 @@ export default function ScanPage() {
       <div className="sticky top-0 z-50 px-6 py-6 flex justify-center pointer-events-none">
         <header className="px-10 h-16 w-full max-w-6xl flex items-center justify-between glass-3d-nav pointer-events-auto">
           <div className="flex items-center gap-6">
+            <Link href="/dashboard" className="flex items-center gap-2 p-3 rounded-full hover:bg-black/5 transition-colors text-muted-foreground hover:text-black">
+              <LayoutDashboard className="h-4 w-4" />
+            </Link>
+            <div className="h-4 w-[1px] bg-black/10"></div>
             <button onClick={() => router.back()} className="p-3 rounded-full hover:bg-black/5 transition-colors">
               <ChevronLeft className="h-5 w-5" />
             </button>
             <div className="h-4 w-[1px] bg-black/10 mx-2"></div>
             <div className="flex flex-col">
               <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 leading-none mb-1">Target Stream</span>
-              <span className="text-sm font-bold tracking-tight truncate max-w-[200px]">{url}</span>
+              <span className="text-sm font-bold tracking-tight truncate max-w-[200px]">{scanUrl}</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <ExportPDF url={url || ""} results={results} />
+            <ExportPDF url={scanUrl || ""} results={results} />
             <button className="p-3 rounded-full bg-white border border-black/5 hover:bg-black/5 transition-all shadow-sm">
               <Share2 className="h-4 w-4" />
             </button>

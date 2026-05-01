@@ -27,9 +27,12 @@
     "@supabase/supabase-js": "^2.104.1",
     "axe-core": "^4.11.3",
     "axe-playwright": "^2.2.2",
+    "bullmq": "^5.76.4",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "playwright": "^1.59.1"
+    "ioredis": "^5.10.1",
+    "playwright": "^1.59.1",
+    "resend": "^6.12.2"
   }
 }

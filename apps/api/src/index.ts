@@ -2,6 +2,8 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import scanRouter from './routes/scan';
+import monitoringRouter from './routes/monitoring';
+import './queues/scanQueue'; // This starts the worker
 
 dotenv.config();
 
@@ -13,6 +15,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/scan', scanRouter);
+app.use('/api/monitoring', monitoringRouter);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {

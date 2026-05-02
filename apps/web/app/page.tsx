@@ -22,6 +22,7 @@ export default function Home() {
   const [url, setUrl] = useState("");
   const [user, setUser] = useState<any>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [recentScans, setRecentScans] = useState<any[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -30,6 +31,17 @@ export default function Home() {
         data: { user },
       } = await supabase.auth.getUser();
       setUser(user);
+
+      if (user) {
+        const { data } = await supabase
+          .from('scans')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(3);
+        
+        if (data) setRecentScans(data);
+      }
     };
     checkUser();
   }, []);
@@ -47,17 +59,6 @@ export default function Home() {
       router.push(`/scan?url=${encodeURIComponent(url)}`);
     }
   };
-
-  const recentScans = [
-    { name: "apple.com", score: 94, status: "Complete", date: "2 mins ago" },
-    { name: "github.com", score: 88, status: "Complete", date: "1 hour ago" },
-    {
-      name: "stripe.com",
-      score: 76,
-      status: "Action Required",
-      date: "3 hours ago",
-    },
-  ];
 
   const features = [
     {
@@ -206,12 +207,12 @@ export default function Home() {
 
               <div className="grid gap-4">
                 {recentScans.map((scan, i) => (
-                  <motion.div key={scan.name} {...fadeInUp} transition={{ delay: i * 0.1 }} className="glass-3d-panel !p-6 md:!p-8 flex flex-col md:flex-row items-center justify-between hover:bg-white transition-all shadow-sm">
+                  <motion.div key={scan.id} {...fadeInUp} transition={{ delay: i * 0.1 }} className="glass-3d-panel !p-6 md:!p-8 flex flex-col md:flex-row items-center justify-between hover:bg-white transition-all shadow-sm">
                     <div className="flex items-center gap-6 md:gap-8">
-                      <div className="h-14 w-20 bg-black/5 rounded-2xl flex items-center justify-center font-bold text-[10px] text-black/20 uppercase shrink-0">{scan.name.split(".")[0]}</div>
+                      <div className="h-14 w-20 bg-black/5 rounded-2xl flex items-center justify-center font-bold text-[10px] text-black/20 uppercase shrink-0">{scan.url.replace('https://', '').split(".")[0]}</div>
                       <div className="overflow-hidden">
-                        <h4 className="text-lg md:text-xl font-bold tracking-tight truncate">{scan.name}</h4>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mt-1">{scan.date}</p>
+                        <h4 className="text-lg md:text-xl font-bold tracking-tight truncate">{scan.url}</h4>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mt-1">{new Date(scan.created_at).toLocaleDateString()}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-8 md:gap-12 mt-4 md:mt-0">

@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import TrendChart from "../../components/TrendChart";
+import ExportPDF from "../../components/ExportPDF";
+import { Code, CreditCard } from "lucide-react";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -103,13 +105,6 @@ export default function DashboardPage() {
       score: Number(s.score)
     }));
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#e3e2c3] flex items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-[#3b83f5]" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#e3e2c3] text-[#1a1a1a] flex overflow-hidden font-poppins font-light">
@@ -127,18 +122,18 @@ export default function DashboardPage() {
               <LayoutDashboard className="h-5 w-5" />
               <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Command Center</span>
            </button>
+           <Link href="/developer" className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
+              <Code className="h-5 w-5 group-hover:text-black transition-colors" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Developer API</span>
+           </Link>
+           <Link href="/pricing" className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
+              <CreditCard className="h-5 w-5 group-hover:text-black transition-colors" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Pricing</span>
+           </Link>
            <Link href="/profile" className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
               <UserIcon className="h-5 w-5 group-hover:text-black transition-colors" />
               <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Profile</span>
            </Link>
-           <button className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
-              <History className="h-5 w-5 group-hover:text-black transition-colors" />
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Audit Archive</span>
-           </button>
-           <button className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
-              <Settings className="h-5 w-5 group-hover:text-black transition-colors" />
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Settings</span>
-           </button>
         </nav>
 
         <div className="pt-10 border-t border-black/5">
@@ -163,6 +158,29 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto relative z-10 p-12 lg:p-20 animate-popup">
+        {loading ? (
+          <div className="max-w-6xl mx-auto space-y-16 animate-pulse">
+            <div className="flex items-center justify-between">
+              <div className="space-y-4">
+                 <div className="h-16 w-96 bg-black/5 rounded-2xl"></div>
+                 <div className="h-6 w-64 bg-black/5 rounded-full"></div>
+              </div>
+              <div className="h-16 w-40 bg-black/5 rounded-full"></div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+               <div className="lg:col-span-2 h-96 bg-black/5 rounded-[2.5rem]"></div>
+               <div className="h-96 bg-black/5 rounded-[2.5rem]"></div>
+            </div>
+            <div className="space-y-6">
+               <div className="h-10 w-64 bg-black/5 rounded-2xl"></div>
+               <div className="grid grid-cols-3 gap-8">
+                  <div className="h-48 bg-black/5 rounded-[2.5rem]"></div>
+                  <div className="h-48 bg-black/5 rounded-[2.5rem]"></div>
+                  <div className="h-48 bg-black/5 rounded-[2.5rem]"></div>
+               </div>
+            </div>
+          </div>
+        ) : (
         <div className="max-w-6xl mx-auto space-y-16">
            {/* Top Bar */}
            <div className="flex items-center justify-between">
@@ -303,9 +321,11 @@ export default function DashboardPage() {
                              <p className={`text-3xl font-bold ${scan.score >= 90 ? 'text-green-600' : 'text-primary'}`}>{scan.score}%</p>
                           </div>
                           <div className="flex items-center gap-4">
-                             <button className="h-14 w-14 rounded-full bg-black/5 flex items-center justify-center hover:bg-black hover:text-white transition-all duration-500 shadow-sm">
-                                <Download className="h-5 w-5" />
-                             </button>
+                              <ExportPDF 
+                                url={scan.url} 
+                                results={{ score: scan.score, violations: scan.results ? JSON.parse(scan.results) : [] }} 
+                                iconOnly 
+                              />
                              <Link href={`/scan?url=${encodeURIComponent(scan.url)}`} className="h-14 w-14 rounded-full bg-black/5 flex items-center justify-center hover:bg-black hover:text-white transition-all duration-500 shadow-sm">
                                 <ChevronRight className="h-5 w-5" />
                              </Link>
@@ -322,6 +342,7 @@ export default function DashboardPage() {
               </div>
            </div>
         </div>
+        )}
       </main>
     </div>
   );

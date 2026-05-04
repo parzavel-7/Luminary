@@ -159,4 +159,36 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req: R
   return res.status(200).json({ received: true });
 });
 
+// POST /api/stripe/create-portal-session
+router.post('/create-portal-session', async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'Missing userId' });
+    }
+
+    // Get customer ID from profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('stripe_customer_id')
+      .eq('id', userId)
+      .single();
+
+    if (!profile?.stripe_customer_id) {
+      return res.status(400).json({ error: 'No Stripe customer found for this user' });
+    }
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: profile.stripe_customer_id,
+      return_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/profile`,
+    });
+
+    return res.status(200).json({ url: session.url });
+  } catch (error: any) {
+    console.error('Stripe Portal error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

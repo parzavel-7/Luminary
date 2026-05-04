@@ -61,6 +61,22 @@ export default function ProfilePage() {
     router.push("/");
   };
 
+  const handleManageSubscription = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/stripe/create-portal-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id })
+      });
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Failed to open billing portal:", error);
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-[#e3e2c3] text-[#1a1a1a] flex overflow-hidden font-poppins font-light">
@@ -253,8 +269,16 @@ export default function ProfilePage() {
                   </Link>
                 )}
                 {profile?.plan === 'pro' && (
-                  <div className="flex items-center justify-center gap-2 py-4 rounded-full bg-white/10 text-[10px] font-bold uppercase tracking-widest text-white/60">
-                    <CheckCircle2 className="h-4 w-4 text-[#2ecac5]" /> Plan Active
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-center gap-2 py-4 rounded-full bg-white/10 text-[10px] font-bold uppercase tracking-widest text-white/60">
+                      <CheckCircle2 className="h-4 w-4 text-[#2ecac5]" /> Plan Active
+                    </div>
+                    <button 
+                      onClick={handleManageSubscription}
+                      className="w-full text-center py-4 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-white/10 transition-colors"
+                    >
+                      Manage Subscription
+                    </button>
                   </div>
                 )}
               </div>

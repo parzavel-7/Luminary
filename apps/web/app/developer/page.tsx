@@ -263,7 +263,7 @@ export default function DeveloperPage() {
               
               <div className="bg-[#1a1a1a] rounded-2xl p-6 relative group/code">
                 <button 
-                  onClick={() => copyToClipboard(`curl -X POST http://localhost:8080/api/public/scan \\
+                  onClick={() => copyToClipboard(`curl -X POST http://127.0.0.1:8080/api/public/scan \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: YOUR_API_KEY" \\
   -d '{"url":"https://example.com"}'`)}
@@ -272,7 +272,7 @@ export default function DeveloperPage() {
                   {copied ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                 </button>
                 <pre className="text-[13px] font-mono text-white/80 overflow-x-auto leading-relaxed">
-                  <span className="text-pink-400">curl</span> -X POST http://localhost:8080/api/public/scan \{"\n"}
+                  <span className="text-pink-400">curl</span> -X POST http://127.0.0.1:8080/api/public/scan \{"\n"}
                   {"  "}-H <span className="text-green-300">"Content-Type: application/json"</span> \{"\n"}
                   {"  "}-H <span className="text-green-300">"X-API-Key: YOUR_API_KEY"</span> \{"\n"}
                   {"  "}-d <span className="text-yellow-300">'{"{"}"url":"https://example.com"{"}"}'</span>

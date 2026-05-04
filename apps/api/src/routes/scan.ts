@@ -26,6 +26,36 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     console.log(`Received scan request for: ${url} (User: ${userId || 'Anonymous'})`);
+
+    // 0. Check limits if user is logged in
+    if (userId) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('plan')
+        .eq('id', userId)
+        .single();
+
+      const plan = profile?.plan || 'free';
+      const limits: Record<string, number> = {
+        'free': 10,
+        'pro': 500,
+        'enterprise': 1000000
+      };
+
+      const limit = limits[plan] || 10;
+
+      const { count } = await supabase
+        .from('scans')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+      if (count !== null && count >= limit) {
+        return res.status(429).json({ 
+          error: 'Too Many Requests', 
+          message: `You have reached your scan limit for the ${plan.toUpperCase()} plan. Please upgrade to continue.` 
+        });
+      }
+    }
     
     // 1. Run the scan
     const rawViolations = await scanUrl(url);

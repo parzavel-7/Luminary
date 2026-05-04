@@ -16,11 +16,15 @@ import {
   Shield,
   Bell,
   Trash2,
-  Crown
+  Crown,
+  CheckCircle2
 } from "lucide-react";
+import UsageIndicator from "../../components/UsageIndicator";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [scanCount, setScanCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
@@ -32,6 +36,20 @@ export default function ProfilePage() {
         router.push("/login");
       } else {
         setUser(user);
+        // Fetch profile
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        setProfile(profileData);
+
+        // Fetch scan count
+        const { count } = await supabase
+          .from('scans')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        setScanCount(count || 0);
       }
       setLoading(false);
     };
@@ -214,22 +232,31 @@ export default function ProfilePage() {
                   <Crown className="h-6 w-6 text-yellow-400" />
                 </div>
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Current Plan</h3>
-                <div className="text-4xl font-light tracking-tighter mb-4">Free</div>
-                <p className="text-sm text-white/70 mb-8">You are currently on the Free tier with basic limits.</p>
+                <div className="text-4xl font-light tracking-tighter mb-4 capitalize">{profile?.plan || 'Free'}</div>
+                <p className="text-sm text-white/70 mb-8">
+                  {profile?.plan === 'pro' 
+                    ? "You are on the Pro tier with increased limits and priority support." 
+                    : "You are currently on the Free tier with basic limits."}
+                </p>
                 
-                <div className="space-y-4 mb-8">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/60">API Calls</span>
-                    <span className="font-bold">12 / 100</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-[#3b83f5] to-[#2ecac5] w-[12%]" />
-                  </div>
+                <div className="mb-10">
+                  <UsageIndicator 
+                    current={scanCount} 
+                    limit={profile?.plan === 'pro' ? 500 : 10} 
+                    label="Monthly Scans" 
+                  />
                 </div>
 
-                <Link href="/pricing" className="block w-full text-center py-4 rounded-full bg-white text-black text-[11px] font-bold uppercase tracking-widest hover:bg-gray-100 transition-colors">
-                  Upgrade to Pro
-                </Link>
+                {profile?.plan !== 'pro' && (
+                  <Link href="/pricing" className="block w-full text-center py-4 rounded-full bg-white text-black text-[11px] font-bold uppercase tracking-widest hover:bg-gray-100 transition-colors">
+                    Upgrade to Pro
+                  </Link>
+                )}
+                {profile?.plan === 'pro' && (
+                  <div className="flex items-center justify-center gap-2 py-4 rounded-full bg-white/10 text-[10px] font-bold uppercase tracking-widest text-white/60">
+                    <CheckCircle2 className="h-4 w-4 text-[#2ecac5]" /> Plan Active
+                  </div>
+                )}
               </div>
 
               {/* Notifications */}

@@ -23,12 +23,24 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import TrendChart from "../../components/TrendChart";
-import ExportPDF from "../../components/ExportPDF";
+import dynamic from "next/dynamic";
+import UsageIndicator from "../../components/UsageIndicator";
+
+const ExportPDF = dynamic(() => import("../../components/ExportPDF"), { 
+  ssr: false,
+  loading: () => (
+    <div className="h-14 w-14 rounded-full bg-black/5 flex items-center justify-center animate-pulse">
+      <Download className="h-5 w-5 text-black/10" />
+    </div>
+  )
+});
 import { Code, CreditCard } from "lucide-react";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [scans, setScans] = useState<any[]>([]);
+  const [profile, setProfile] = useState<any>(null);
+  const [scanCount, setScanCount] = useState(0);
   const [monitoredSites, setMonitoredSites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newUrl, setNewUrl] = useState("");
@@ -51,6 +63,21 @@ export default function DashboardPage() {
           .order('created_at', { ascending: false });
         
         if (scanData) setScans(scanData);
+
+        // Fetch profile
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        setProfile(profileData);
+
+        // Fetch scan count
+        const { count } = await supabase
+          .from('scans')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        setScanCount(count || 0);
 
         // Fetch monitored sites
         const { data: monitorData } = await supabase
@@ -208,19 +235,17 @@ export default function DashboardPage() {
                     </h3>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 mt-1">Average Health Index</p>
                  </div>
-                 <div className="pt-8 border-t border-black/5 mt-8">
-                    <p className="text-[11px] font-bold uppercase tracking-widest mb-4">Active Operations</p>
-                    <div className="flex -space-x-3">
-                       {[1,2,3,4].map(i => (
-                          <div key={i} className="h-10 w-10 rounded-full border-2 border-white bg-[#3b83f5] flex items-center justify-center text-[10px] font-bold text-white">
-                             {i}
-                          </div>
-                       ))}
-                       <div className="h-10 w-10 rounded-full border-2 border-white bg-black/5 flex items-center justify-center text-[10px] font-bold">
-                          +{scans.length}
-                       </div>
+                  <div className="pt-8 border-t border-black/5 mt-8 space-y-8">
+                    <UsageIndicator 
+                      current={scanCount} 
+                      limit={profile?.plan === 'pro' ? 500 : 10} 
+                      label="Quota Utilization" 
+                    />
+                    <div className="flex items-center justify-between p-4 bg-black/5 rounded-2xl">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Current Plan</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest bg-black text-white px-3 py-1 rounded-full">{profile?.plan || 'Free'}</p>
                     </div>
-                 </div>
+                  </div>
               </div>
            </div>
 

@@ -4,6 +4,7 @@ import { scanUrl } from '../services/crawler';
 import { analyzeViolations } from '../services/ai';
 import { calculateScore } from '../services/scorer';
 import { createClient } from '@supabase/supabase-js';
+import { sendScanAlert } from '../services/email';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -70,7 +71,6 @@ export const scanWorker = new Worker(
           .eq('id', monitoredSiteId);
 
         if (email) {
-          const { sendScanAlert } = await import('../services/email');
           await sendScanAlert(email, url, score, siteData?.last_score);
         }
       }

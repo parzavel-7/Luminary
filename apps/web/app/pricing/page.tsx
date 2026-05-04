@@ -41,6 +41,42 @@ export default function PricingPage() {
     router.push("/");
   };
 
+  const handleUpgrade = async (planName: string) => {
+    if (planName === "Free") return;
+    if (planName === "Enterprise") {
+      window.location.href = "mailto:sales@luminary.com";
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push("/login");
+        return;
+      }
+
+      // Using the Product ID provided: prod_URw4460Q1SRLAX
+      const PRODUCT_ID = "prod_URw4460Q1SRLAX";
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/stripe/create-checkout-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: PRODUCT_ID,
+          userId: user.id,
+          userEmail: user.email
+        })
+      });
+
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Upgrade failed:", error);
+    }
+  };
+
   const plans = [
     {
       name: "Free",
@@ -212,6 +248,7 @@ export default function PricingPage() {
                 </ul>
 
                 <button 
+                  onClick={() => handleUpgrade(plan.name)}
                   className={`w-full py-4 rounded-2xl flex items-center justify-center text-[11px] font-bold uppercase tracking-widest transition-all ${
                     plan.popular 
                       ? 'bg-white text-black hover:bg-white/90' 

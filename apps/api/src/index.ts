@@ -5,6 +5,7 @@ import scanRouter from './routes/scan';
 import monitoringRouter from './routes/monitoring';
 import apiKeysRouter from './routes/apiKeys';
 import publicApiRouter from './routes/publicApi';
+import stripeRouter from './routes/stripe';
 import './queues/scanQueue'; // This starts the worker
 
 dotenv.config();
@@ -13,13 +14,21 @@ const app = express();
 const port = process.env.PORT || 8080;
 
 app.use(cors());
-app.use(express.json());
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.originalUrl}`); // DEBUG LOG
+  if (req.originalUrl === '/api/stripe/webhook') {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
 
 // Routes
 app.use('/api/scan', scanRouter);
 app.use('/api/monitoring', monitoringRouter);
 app.use('/api/keys', apiKeysRouter);
 app.use('/api/public', publicApiRouter);
+app.use('/api/stripe', stripeRouter);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {

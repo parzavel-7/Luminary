@@ -6,6 +6,7 @@ import monitoringRouter from './routes/monitoring';
 import apiKeysRouter from './routes/apiKeys';
 import publicApiRouter from './routes/publicApi';
 import stripeRouter from './routes/stripe';
+import testEmailRouter from './routes/testEmail';
 import './queues/scanQueue'; // This starts the worker
 
 dotenv.config();
@@ -29,6 +30,7 @@ app.use('/api/monitoring', monitoringRouter);
 app.use('/api/keys', apiKeysRouter);
 app.use('/api/public', publicApiRouter);
 app.use('/api/stripe', stripeRouter);
+app.use('/api/test-email', testEmailRouter);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {

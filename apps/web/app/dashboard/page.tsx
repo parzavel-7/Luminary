@@ -238,7 +238,7 @@ export default function DashboardPage() {
                   <div className="pt-8 border-t border-black/5 mt-8 space-y-8">
                     <UsageIndicator 
                       current={scanCount} 
-                      limit={profile?.plan === 'pro' ? 500 : 10} 
+                      limit={profile?.plan === 'pro' ? 500 : profile?.plan === 'enterprise' ? 10000 : 10} 
                       label="Quota Utilization" 
                     />
                     <div className="flex items-center justify-between p-4 bg-black/5 rounded-2xl">
@@ -351,9 +351,9 @@ export default function DashboardPage() {
                                 results={{ score: scan.score, violations: scan.results ? JSON.parse(scan.results) : [] }} 
                                 iconOnly 
                               />
-                             <Link href={`/scan?url=${encodeURIComponent(scan.url)}`} className="h-14 w-14 rounded-full bg-black/5 flex items-center justify-center hover:bg-black hover:text-white transition-all duration-500 shadow-sm">
-                                <ChevronRight className="h-5 w-5" />
-                             </Link>
+                          <Link href={`/report/${scan.id}`} className="h-14 w-14 rounded-full bg-black/5 flex items-center justify-center hover:bg-black hover:text-white transition-all duration-500 shadow-sm">
+                             <ChevronRight className="h-5 w-5" />
+                           </Link>
                           </div>
                        </div>
                     </motion.div>

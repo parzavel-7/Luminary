@@ -20,6 +20,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ViolationCard } from "../../components/ViolationCard";
 import { ScoreChart } from "../../components/ScoreChart";
 import dynamic from "next/dynamic";
+import { supabase } from "../../lib/supabase";
+import ShareModal from "../../components/ShareModal";
 
 const ExportPDF = dynamic(() => import("../../components/ExportPDF"), { 
   ssr: false,
@@ -30,17 +32,15 @@ const ExportPDF = dynamic(() => import("../../components/ExportPDF"), {
   )
 });
 
-import { supabase } from "../../lib/supabase";
-
 export default function ScanPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  // Capture the URL immediately into state, then hide it from the address bar
   const [scanUrl, setScanUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // On mount: grab URL from params, save to state, then clean the address bar
   useEffect(() => {
@@ -50,9 +50,8 @@ export default function ScanPage() {
       return;
     }
     setScanUrl(rawUrl);
-    // Replace the browser URL with a clean path — no query string exposed
     window.history.replaceState(null, '', '/scan');
-  }, []);
+  }, [searchParams, router]);
 
   // Set dynamic browser tab title
   useEffect(() => {
@@ -66,7 +65,7 @@ export default function ScanPage() {
   }, [loading, error, results]);
 
   useEffect(() => {
-    if (!scanUrl) return; // Wait until URL is captured from params
+    if (!scanUrl) return;
 
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -76,22 +75,12 @@ export default function ScanPage() {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/scan`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: scanUrl }),
+          body: JSON.stringify({ url: scanUrl, userId: user?.id }),
         });
 
         if (!response.ok) throw new Error("Neural link failed. Target inaccessible.");
         const data = await response.json();
         setResults(data);
-
-        // Persistent save if logged in
-        if (user) {
-          await supabase.from('scans').insert({
-            user_id: user.id,
-            url: scanUrl,
-            score: data.score,
-            results: JSON.stringify(data.violations),
-          });
-        }
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -102,6 +91,10 @@ export default function ScanPage() {
     init();
   }, [scanUrl]);
 
+  const handleShare = () => {
+    if (!results?.id) return;
+    setIsShareModalOpen(true);
+  };
 
   if (loading) {
     return (
@@ -137,6 +130,13 @@ export default function ScanPage() {
 
   return (
     <div className="min-h-screen bg-[#e3e2c3] text-[#1a1a1a] pb-40 font-poppins font-light">
+      <ShareModal 
+        isOpen={isShareModalOpen} 
+        onClose={() => setIsShareModalOpen(false)} 
+        url={`${typeof window !== 'undefined' ? window.location.origin : ''}/report/${results?.id}`}
+        title={scanUrl || ""}
+      />
+      
       {/* Dynamic Header */}
       <div className="sticky top-0 z-50 px-6 py-6 flex justify-center pointer-events-none">
         <header className="px-10 h-16 w-full max-w-6xl flex items-center justify-between glass-3d-nav pointer-events-auto">
@@ -156,8 +156,12 @@ export default function ScanPage() {
           </div>
           <div className="flex items-center gap-4">
             <ExportPDF url={scanUrl || ""} results={results} />
-            <button className="p-3 rounded-full bg-white border border-black/5 hover:bg-black/5 transition-all shadow-sm">
-              <Share2 className="h-4 w-4" />
+            <button 
+              onClick={handleShare}
+              disabled={!results?.id}
+              className="p-3 rounded-full bg-white border border-black/5 hover:bg-black/5 transition-all shadow-sm flex items-center gap-2 disabled:opacity-30 group"
+            >
+              <Share2 className="h-4 w-4 group-hover:scale-110 transition-transform" />
             </button>
           </div>
         </header>
@@ -166,7 +170,6 @@ export default function ScanPage() {
       <main className="container max-w-6xl mx-auto mt-16 px-6 space-y-16 animate-popup">
         {/* Results Overview */}
         <div className="grid md:grid-cols-12 gap-10">
-          {/* Health Index Card */}
           <div className="md:col-span-4 glass-3d-panel p-10 flex flex-col items-center justify-center relative overflow-hidden group">
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/5 blur-3xl rounded-full group-hover:bg-primary/10 transition-all duration-1000"></div>
             <div className="relative z-10 w-full">
@@ -178,7 +181,6 @@ export default function ScanPage() {
             </div>
           </div>
 
-          {/* Breakdown Stats */}
           <div className="md:col-span-8 grid grid-cols-2 gap-6">
              <div className="glass-3d-panel p-8 space-y-8 group hover:translate-y-[-5px] transition-all duration-700">
                 <div className="p-4 bg-red-500/10 text-red-600 rounded-2xl w-fit shadow-sm">
@@ -230,8 +232,8 @@ export default function ScanPage() {
           <div className="flex items-center justify-between border-b border-black/5 pb-10">
              <div className="space-y-2">
                 <div className="flex items-center gap-2 text-black/30">
-                  <Sparkles className="h-4 w-4" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">Neural Diagnostics</span>
+                   <Sparkles className="h-4 w-4" />
+                   <span className="text-[10px] font-bold uppercase tracking-widest">Neural Diagnostics</span>
                 </div>
                 <h2 className="text-5xl tracking-tighter font-light uppercase">Core Findings</h2>
              </div>

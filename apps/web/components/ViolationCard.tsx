@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, ChevronDown, Code2, Lightbulb, Zap } from "lucide-react";
+import { AlertTriangle, ChevronDown, Code2, Lightbulb, Zap, Copy } from "lucide-react";
 import { useState } from "react";
 
 interface ViolationCardProps {
@@ -77,6 +77,18 @@ export function ViolationCard({ violation, index }: ViolationCardProps) {
                   </div>
                   <div className="relative group/code">
                     <div className="absolute -inset-4 bg-gradient-to-r from-[#3b83f5] to-[#2ecac5] opacity-0 group-hover/code:opacity-20 blur-2xl transition-opacity duration-700"></div>
+                    <div className="absolute top-4 right-4 z-10">
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(violation.ai_fix || "");
+                          // Optional: Add a small toast or change icon
+                        }}
+                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/50 hover:text-white transition-all shadow-xl backdrop-blur-md"
+                        title="Copy code"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </button>
+                    </div>
                     <pre className="relative p-8 bg-[#0e0e0f] border border-white/10 rounded-3xl overflow-x-auto text-sm font-mono shadow-2xl">
                       <code className="text-[#3b83f5]">{violation.ai_fix || "// Reference element attributes below"}</code>
                     </pre>

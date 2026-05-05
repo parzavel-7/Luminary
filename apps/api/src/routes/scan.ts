@@ -75,8 +75,9 @@ router.post('/', async (req: Request, res: Response) => {
     };
 
     // 4. Save to Supabase if userId is provided
+    let savedScanId = null;
     if (userId) {
-      const { error } = await supabase
+      const { data: savedData, error } = await supabase
         .from('scans')
         .insert([
           { 
@@ -86,16 +87,19 @@ router.post('/', async (req: Request, res: Response) => {
             counts: JSON.stringify(counts), 
             results: JSON.stringify(analyzedViolations) 
           }
-        ]);
+        ])
+        .select('id')
+        .single();
       
       if (error) {
         console.error('Supabase save error:', error);
       } else {
-        console.log('Scan saved to Supabase for user:', userId);
+        savedScanId = savedData.id;
+        console.log('Scan saved to Supabase for user:', userId, 'ID:', savedScanId);
       }
     }
     
-    return res.status(200).json(result);
+    return res.status(200).json({ ...result, id: savedScanId });
 
   } catch (error: any) {
     console.error('Scan route error:', error);
@@ -103,6 +107,34 @@ router.post('/', async (req: Request, res: Response) => {
       error: 'Failed to scan website',
       message: error.message 
     });
+  }
+});
+
+// GET /api/scan/:id
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const { data, error } = await supabase
+      .from('scans')
+      .select('*')
+      .eq('id', id)
+      .single();
+      
+    if (error || !data) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+    
+    return res.status(200).json({
+      id: data.id,
+      url: data.url,
+      score: data.score,
+      counts: typeof data.counts === 'string' ? JSON.parse(data.counts) : data.counts,
+      violations: typeof data.results === 'string' ? JSON.parse(data.results) : data.results,
+      created_at: data.created_at
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
   }
 });
 

@@ -92,7 +92,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req: R
   console.log(`🔔 Received event: ${event.type}`);
 
   switch (event.type) {
-    case 'checkout.session.completed':
+    case 'checkout.session.completed': {
       const session = event.data.object;
       const userId = session.metadata?.userId;
       
@@ -101,7 +101,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req: R
       if (userId) {
         console.log(`🔄 Attempting to upgrade user ${userId} to PRO...`);
         
-        const { data, error, count } = await supabase
+        const { data, error } = await supabase
           .from('profiles')
           .update({ 
             plan: 'pro',
@@ -115,29 +115,38 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req: R
           console.error(`❌ Database update failed for user ${userId}:`, error);
         } else if (!data || data.length === 0) {
           console.warn(`⚠️ No profile found for user ${userId}. Creating one...`);
-          const { error: insertError } = await supabase
+          await supabase
             .from('profiles')
-            .insert({
+            .upsert({
               id: userId,
               plan: 'pro',
               subscription_status: 'active',
               updated_at: new Date().toISOString()
             });
-          
-          if (insertError) {
-            console.error(`❌ Failed to create profile for user ${userId}:`, insertError);
-          } else {
-            console.log(`✅ Profile created and upgraded to PRO for user ${userId}`);
-          }
-        } else {
-          console.log(`✅ User ${userId} upgraded to PRO successfully`);
         }
-      } else {
-        console.warn('⚠️ No userId found in session metadata!');
       }
       break;
+    }
     
-    case 'customer.subscription.deleted':
+    case 'customer.subscription.updated': {
+      const subscription = event.data.object;
+      const customerId = subscription.customer as string;
+      const status = subscription.status;
+      
+      console.log(`🔄 Subscription updated for customer ${customerId}. Status: ${status}`);
+      
+      // Update status in DB
+      await supabase
+        .from('profiles')
+        .update({ 
+          subscription_status: status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('stripe_customer_id', customerId);
+      break;
+    }
+
+    case 'customer.subscription.deleted': {
       const subscription = event.data.object;
       const customerId = subscription.customer as string;
       // Downgrade profile to FREE
@@ -151,6 +160,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req: R
         .eq('stripe_customer_id', customerId);
       console.log(`Customer ${customerId} subscription deleted - downgraded to FREE`);
       break;
+    }
 
     default:
       console.log(`Unhandled event type ${event.type}`);

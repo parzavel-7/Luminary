@@ -110,9 +110,9 @@ export default function Home() {
             </span>
           </Link>
           <nav className="hidden lg:flex gap-10 shrink-0">
-            <Link className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/80 hover:text-black transition-all" href="#features">Features</Link>
-            {user && <Link className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/80 hover:text-black transition-all" href="#history">History</Link>}
-            <Link className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/80 hover:text-black transition-all" href="#">Pricing</Link>
+            <Link className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/80 hover:text-black transition-all" href="/#features">Features</Link>
+            {user && <Link className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/80 hover:text-black transition-all" href="/#history">History</Link>}
+            <Link className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/80 hover:text-black transition-all" href="/pricing">Pricing</Link>
           </nav>
           <div className="flex items-center gap-4 md:gap-6 shrink-0">
             {user ? (
@@ -241,7 +241,7 @@ export default function Home() {
           <div className="flex gap-8 md:gap-12 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 shrink-0">
             <Link href="#" className="hover:text-black transition-colors">Privacy</Link>
             <Link href="#" className="hover:text-black transition-colors">Terms</Link>
-            <Link href="#" className="hover:text-black transition-colors">API</Link>
+            <Link href="/developer" className="hover:text-black transition-colors">API</Link>
           </div>
           <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/30 shrink-0">© {new Date().getFullYear()} Luminary</div>
         </div>

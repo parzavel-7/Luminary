@@ -19,7 +19,10 @@ import {
   Download,
   ExternalLink,
   Loader2,
-  User as UserIcon
+  User as UserIcon,
+  Users,
+  Code,
+  CreditCard
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import TrendChart from "../../components/TrendChart";
@@ -34,7 +37,7 @@ const ExportPDF = dynamic(() => import("../../components/ExportPDF"), {
     </div>
   )
 });
-import { Code, CreditCard } from "lucide-react";
+// Code and CreditCard moved to main import above
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -145,10 +148,14 @@ export default function DashboardPage() {
         </Link>
 
         <nav className="flex-1 space-y-3">
-           <button className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl bg-black text-white shadow-2xl shadow-black/20 group transition-all">
-              <LayoutDashboard className="h-5 w-5" />
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Command Center</span>
-           </button>
+            <button className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl bg-black text-white shadow-2xl shadow-black/20 group transition-all">
+               <LayoutDashboard className="h-5 w-5" />
+               <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Command Center</span>
+            </button>
+            <Link href="/team" className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
+               <Users className="h-5 w-5 group-hover:text-black transition-colors" />
+               <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Team Workspace</span>
+            </Link>
            <Link href="/developer" className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
               <Code className="h-5 w-5 group-hover:text-black transition-colors" />
               <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Developer API</span>
@@ -184,7 +191,7 @@ export default function DashboardPage() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto relative z-10 p-12 lg:p-20 animate-popup">
+      <main className="flex-1 overflow-y-auto relative z-10 p-12 lg:p-20">
         {loading ? (
           <div className="max-w-6xl mx-auto space-y-16 animate-pulse">
             <div className="flex items-center justify-between">

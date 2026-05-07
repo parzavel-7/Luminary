@@ -20,7 +20,8 @@ import {
   Eye,
   EyeOff,
   User as UserIcon,
-  CreditCard
+  CreditCard,
+  Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -126,10 +127,14 @@ export default function DeveloperPage() {
         </Link>
 
         <nav className="flex-1 space-y-3">
-           <Link href="/dashboard" className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
-              <LayoutDashboard className="h-5 w-5 group-hover:text-black transition-colors" />
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Command Center</span>
-           </Link>
+            <Link href="/dashboard" className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
+               <LayoutDashboard className="h-5 w-5 group-hover:text-black transition-colors" />
+               <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Command Center</span>
+            </Link>
+            <Link href="/team" className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
+               <Users className="h-5 w-5 group-hover:text-black transition-colors" />
+               <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Team Workspace</span>
+            </Link>
            <button className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl bg-black text-white shadow-2xl shadow-black/20 group transition-all">
               <Code className="h-5 w-5" />
               <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Developer API</span>

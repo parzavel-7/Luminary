@@ -11,7 +11,7 @@ const supabase = createClient(
 // Register a site for monitoring
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { url, userId, frequency } = req.body;
+    const { url, userId, frequency, orgId } = req.body;
 
     if (!url || !userId) {
       return res.status(400).json({ error: 'URL and UserID are required' });
@@ -25,7 +25,8 @@ router.post('/register', async (req: Request, res: Response) => {
           url, 
           frequency: frequency || 'weekly',
           active: true,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          org_id: orgId || null
         }
       ])
       .select()

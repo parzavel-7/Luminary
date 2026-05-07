@@ -17,7 +17,8 @@ import {
   Bell,
   Trash2,
   Crown,
-  CheckCircle2
+  CheckCircle2,
+  Users
 } from "lucide-react";
 import UsageIndicator from "../../components/UsageIndicator";
 
@@ -93,6 +94,10 @@ export default function ProfilePage() {
            <Link href="/dashboard" className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
               <LayoutDashboard className="h-5 w-5 group-hover:text-black transition-colors" />
               <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Command Center</span>
+           </Link>
+           <Link href="/team" className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
+              <Users className="h-5 w-5 group-hover:text-black transition-colors" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Team Workspace</span>
            </Link>
            <Link href="/developer" className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl hover:bg-black/5 transition-all text-muted-foreground hover:text-black group">
               <Code className="h-5 w-5 group-hover:text-black transition-colors" />

@@ -1,15 +1,26 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+
+// Load env vars FIRST before anything else uses process.env
+dotenv.config();
+
+import { createClient } from '@supabase/supabase-js';
 import scanRouter from './routes/scan';
 import monitoringRouter from './routes/monitoring';
 import apiKeysRouter from './routes/apiKeys';
 import publicApiRouter from './routes/publicApi';
 import stripeRouter from './routes/stripe';
 import testEmailRouter from './routes/testEmail';
+import orgsRouter from './routes/orgs';
+import webhooksRouter from './routes/webhooks';
+import remediationRouter from './routes/remediation';
 import './queues/scanQueue'; // This starts the worker
 
-dotenv.config();
+export const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -31,6 +42,9 @@ app.use('/api/keys', apiKeysRouter);
 app.use('/api/public', publicApiRouter);
 app.use('/api/stripe', stripeRouter);
 app.use('/api/test-email', testEmailRouter);
+app.use('/api/orgs', orgsRouter);
+app.use('/api/webhooks', webhooksRouter);
+app.use('/api/remediation', remediationRouter);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {

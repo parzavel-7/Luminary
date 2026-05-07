@@ -3,6 +3,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, ChevronDown, Code2, Lightbulb, Zap, Copy } from "lucide-react";
 import { useState } from "react";
+import { createPortal } from "react-dom";
+import RemediationWorkspace from "./RemediationWorkspace";
 
 interface ViolationCardProps {
   violation: any;
@@ -11,6 +13,7 @@ interface ViolationCardProps {
 
 export function ViolationCard({ violation, index }: ViolationCardProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
 
   const getImpactColor = (impact: string) => {
     switch (impact) {
@@ -21,6 +24,7 @@ export function ViolationCard({ violation, index }: ViolationCardProps) {
   };
 
   return (
+    <>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -69,6 +73,13 @@ export function ViolationCard({ violation, index }: ViolationCardProps) {
                   <p className="text-muted-foreground text-lg leading-relaxed font-light">
                     {violation.ai_explanation || violation.description}
                   </p>
+                  
+                  <button 
+                    onClick={() => setIsWorkspaceOpen(true)}
+                    className="flex items-center gap-3 px-8 py-3 rounded-2xl bg-black text-white text-[11px] font-bold uppercase tracking-widest hover:bg-black/80 transition-all shadow-xl shadow-black/10 mt-6"
+                  >
+                    <Zap className="h-4 w-4 text-yellow-400" /> Fix in Workspace
+                  </button>
                 </div>
                 <div className="space-y-6">
                   <div className="flex items-center gap-4 text-black/40">
@@ -81,7 +92,6 @@ export function ViolationCard({ violation, index }: ViolationCardProps) {
                       <button 
                         onClick={() => {
                           navigator.clipboard.writeText(violation.ai_fix || "");
-                          // Optional: Add a small toast or change icon
                         }}
                         className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/50 hover:text-white transition-all shadow-xl backdrop-blur-md"
                         title="Copy code"
@@ -115,6 +125,18 @@ export function ViolationCard({ violation, index }: ViolationCardProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
     </motion.div>
+
+    {/* Render workspace as a portal so it overlays the full page */}
+    {typeof window !== 'undefined' && isWorkspaceOpen && createPortal(
+      <RemediationWorkspace 
+        isOpen={isWorkspaceOpen} 
+        onClose={() => setIsWorkspaceOpen(false)} 
+        violation={violation} 
+      />,
+      document.body
+    )}
+    </>
   );
 }

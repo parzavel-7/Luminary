@@ -12,7 +12,7 @@ const supabase = createClient(
 
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { url, userId } = req.body;
+    const { url, userId, orgId } = req.body;
 
     if (!url) {
       return res.status(400).json({ error: 'URL is required' });
@@ -85,7 +85,8 @@ router.post('/', async (req: Request, res: Response) => {
             url, 
             score, 
             counts: JSON.stringify(counts), 
-            results: JSON.stringify(analyzedViolations) 
+            results: JSON.stringify(analyzedViolations),
+            org_id: orgId || null 
           }
         ])
         .select('id')

@@ -49,8 +49,40 @@ export const scanWorker = new Worker(
         .single();
       
       if (error) throw error;
+      const scanId = data.id;
 
-      // 5. Update monitored_site if applicable
+      // 5. Dispatch Webhooks
+      const { data: webhooks } = await supabase
+        .from('webhooks')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('active', true);
+
+      if (webhooks && webhooks.length > 0) {
+        console.log(`[Worker] Dispatching ${webhooks.length} webhooks for user ${userId}`);
+        for (const webhook of webhooks) {
+          try {
+            await fetch(webhook.url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Luminary-Signature': 'sha256=...' },
+              body: JSON.stringify({
+                event: 'scan.completed',
+                data: {
+                  scanId,
+                  url,
+                  score,
+                  counts,
+                  timestamp: new Date().toISOString()
+                }
+              })
+            });
+          } catch (whError) {
+            console.error(`[Worker] Webhook failed for ${webhook.url}:`, whError);
+          }
+        }
+      }
+
+      // 6. Update monitored_site if applicable
       if (monitoredSiteId) {
         // Fetch previous score and user email
         const { data: siteData } = await supabase

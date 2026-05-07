@@ -43,8 +43,19 @@
 
 ---
 
-## Next Immediate Steps (Executing Phase 1)
-1.  Initialize the Turborepo workspace.
-2.  Set up the Next.js `web` app.
-3.  Set up the Express `api` app.
-4.  Implement the Playwright + axe-core scanner endpoint.
+## Phase 9 — Enterprise & Interactive Remediation (Current)
+**Goal:** Team collaboration, organizations, and interactive debugging.
+*   **Organization Infrastructure:** Support multi-tenant organizations and role-based access (Admin, Editor, Viewer).
+*   **Team Workspace:** A dedicated dashboard for managing team members, invites, and shared audit logs.
+*   **Interactive Remediation:** A "Fix Workspace" where developers can test AI-suggested code fixes in a sandbox environment.
+*   **Ecosystem Integration:** Outgoing webhooks and initial architecture for the Luminary Browser Companion (extension).
+
+---
+
+## Next Immediate Steps (Executing Phase 9)
+1.  Initialize the Organization and Membership database schema (Done).
+2.  Implement `apps/api/src/routes/orgs.ts` for managing organizations and invites.
+3.  Create the `/team` management interface in the `web` app.
+4.  Update the `scan` and `monitoring` endpoints to support `org_id` for shared visibility.
+5.  Build the Interactive Remediation Workspace UI component.
+

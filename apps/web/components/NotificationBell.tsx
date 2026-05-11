@@ -9,6 +9,8 @@ import { useRouter } from "next/navigation";
 export default function NotificationBell({ userId }: { userId: string }) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [hasNew, setHasNew] = useState(false);
+
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -17,12 +19,18 @@ export default function NotificationBell({ userId }: { userId: string }) {
       const res = await fetch(`http://localhost:8080/api/notifications/${userId}`);
       if (res.ok) {
         const data = await res.json();
+        // Check if there are any unread notifications that we haven't seen yet
+        const unread = data.filter((n: any) => !n.read);
+        if (unread.length > notifications.filter((n: any) => !n.read).length) {
+          setHasNew(true);
+        }
         setNotifications(data);
       }
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
     }
   };
+
 
   useEffect(() => {
     if (!userId) return;
@@ -46,18 +54,22 @@ export default function NotificationBell({ userId }: { userId: string }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const markAsRead = async (id: string, scanId?: string) => {
+  const markAsRead = async (id: string) => {
     try {
       await fetch(`http://localhost:8080/api/notifications/${id}/read`, { method: 'PATCH' });
-      setNotifications(prev => prev.filter(n => n.id !== id));
-      setIsOpen(false);
-      
-      // We don't have scan_id natively in the table right now, but if we did, we could navigate:
-      // if (scanId) router.push(`/report/${scanId}`);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
     } catch (error) {
       console.error("Failed to mark as read:", error);
     }
   };
+
+  const handleToggle = () => {
+    if (!isOpen) {
+      setHasNew(false);
+    }
+    setIsOpen(!isOpen);
+  };
+
 
   const markAllAsRead = async () => {
     try {
@@ -81,69 +93,88 @@ export default function NotificationBell({ userId }: { userId: string }) {
   return (
     <div className="relative" ref={dropdownRef}>
       <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl hover:bg-black/5 text-muted-foreground hover:text-black transition-all group relative"
+        onClick={handleToggle}
+        className={`w-full flex items-center gap-4 px-6 py-3 rounded-2xl transition-all group relative ${isOpen ? 'bg-black text-white' : 'hover:bg-black/5 text-muted-foreground hover:text-black'}`}
       >
         <div className="relative">
-          <Bell className="h-5 w-5 group-hover:text-black transition-colors" />
-          {notifications.length > 0 && (
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white shadow-sm flex items-center justify-center">
-              {notifications.length > 9 && <span className="text-[6px] text-white font-bold animate-pulse" />}
-            </span>
+          <Bell className={`h-5 w-5 transition-colors ${isOpen ? 'text-white' : 'group-hover:text-black'}`} />
+          {hasNew && (
+            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white shadow-sm" />
           )}
         </div>
         <span className="text-[11px] font-bold uppercase tracking-widest truncate">Notifications</span>
       </button>
 
+
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="absolute bottom-full left-0 mb-4 w-80 bg-white/90 backdrop-blur-3xl rounded-[2rem] shadow-2xl border border-black/10 overflow-hidden z-50 flex flex-col max-h-[400px]"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed inset-y-0 left-80 w-[450px] bg-white/80 backdrop-blur-3xl shadow-[50px_0_100px_rgba(0,0,0,0.1)] border-r border-black/5 z-[100] flex flex-col"
           >
-            <div className="p-5 border-b border-black/5 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
-              <h4 className="text-[11px] font-bold uppercase tracking-widest">Inbox</h4>
-              {notifications.length > 0 && (
+            <div className="p-10 border-b border-black/5 flex items-center justify-between bg-white/40 backdrop-blur-md">
+              <div>
+                <h4 className="text-2xl font-light tracking-tighter uppercase mb-1">Intelligence Feed</h4>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50">Real-time status updates</p>
+              </div>
+              {notifications.some(n => !n.read) && (
                 <button 
                   onClick={markAllAsRead}
-                  className="text-[9px] font-bold uppercase tracking-widest text-[#3b83f5] hover:text-[#2ecac5] transition-colors"
+                  className="text-[10px] font-bold uppercase tracking-widest text-[#3b83f5] hover:text-[#2ecac5] transition-colors bg-blue-50 px-4 py-2 rounded-full"
                 >
                   Clear All
                 </button>
               )}
             </div>
             
-            <div className="overflow-y-auto flex-1 p-2 scrollbar-hide">
+            <div className="overflow-y-auto flex-1 p-6 scrollbar-hide custom-scrollbar">
               {notifications.length === 0 ? (
-                <div className="py-12 text-center text-muted-foreground flex flex-col items-center">
-                  <Bell className="h-8 w-8 text-black/10 mb-3" />
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em]">All caught up</p>
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-30">
+                  <Bell className="h-12 w-12" />
+                  <p className="text-[11px] font-bold uppercase tracking-[0.3em]">Neural link clear</p>
                 </div>
               ) : (
-                <div className="space-y-1">
+                <div className="space-y-4">
                   {notifications.map((notif) => (
-                    <button
+                    <div
                       key={notif.id}
-                      onClick={() => markAsRead(notif.id)}
-                      className="w-full p-4 rounded-2xl hover:bg-black/5 transition-all flex items-start gap-4 text-left group"
+                      onClick={() => !notif.read && markAsRead(notif.id)}
+                      className={`w-full p-6 rounded-[2rem] transition-all flex items-start gap-6 text-left group border ${notif.read ? 'bg-transparent border-transparent opacity-60' : 'bg-white border-black/5 shadow-sm hover:shadow-md cursor-pointer'}`}
                     >
-                      <div className="mt-0.5">{getIcon(notif.type)}</div>
-                      <div className="flex-1 overflow-hidden">
-                        <p className="text-[11px] font-bold text-black mb-1 truncate">{notif.title}</p>
-                        <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">{notif.body}</p>
-                        <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/40 mt-2">
-                          {new Date(notif.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </p>
+                      <div className={`mt-1 h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ${notif.read ? 'bg-black/5' : 'bg-black/5 group-hover:bg-black group-hover:text-white transition-colors'}`}>
+                        {getIcon(notif.type)}
                       </div>
-                    </button>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className={`text-[13px] font-bold truncate ${notif.read ? 'text-muted-foreground' : 'text-black'}`}>{notif.title}</p>
+                          {!notif.read && <span className="h-1.5 w-1.5 rounded-full bg-[#3b83f5]" />}
+                        </div>
+                        <p className={`text-[11px] leading-relaxed mb-3 ${notif.read ? 'text-muted-foreground/60' : 'text-muted-foreground'}`}>{notif.body}</p>
+                        <div className="flex items-center gap-3">
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/30">
+                            {new Date(notif.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} • {new Date(notif.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
             </div>
+            
+            <div className="p-8 border-t border-black/5 bg-black/[0.02]">
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="w-full h-14 rounded-2xl bg-black text-white text-[11px] font-bold uppercase tracking-widest hover:brightness-110 transition-all shadow-xl"
+              >
+                Close Intelligence Feed
+              </button>
+            </div>
           </motion.div>
+
         )}
       </AnimatePresence>
     </div>

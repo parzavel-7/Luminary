@@ -17,6 +17,7 @@ import webhooksRouter from './routes/webhooks';
 import remediationRouter from './routes/remediation';
 import notificationsRouter from './routes/notifications';
 import historyRouter from './routes/history';
+import integrationsRouter from './routes/integrations';
 import './queues/scanQueue'; // This starts the worker
 console.log('Scan Worker initialized and listening for jobs...');
 
@@ -50,6 +51,7 @@ app.use('/api/webhooks', webhooksRouter);
 app.use('/api/remediation', remediationRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/history', historyRouter);
+app.use('/api/integrations', integrationsRouter);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {

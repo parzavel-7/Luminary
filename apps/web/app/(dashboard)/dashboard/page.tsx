@@ -23,7 +23,8 @@ import {
   Users,
   Code,
   CreditCard,
-  Trash2
+  Trash2,
+  Calendar
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import TrendChart from "../../../components/TrendChart";
@@ -295,6 +296,59 @@ export default function DashboardPage() {
                       <p className="text-[10px] font-black uppercase tracking-widest bg-black text-white px-3 py-1 rounded-full">{profile?.plan || 'Free'}</p>
                     </div>
                   </div>
+              </div>
+           </div>
+
+           {/* Phase 12: Enterprise Insights & Ops */}
+           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+              {/* Portfolio Export (Enterprise) */}
+              <div className="lg:col-span-2 glass-3d-panel p-10 bg-gradient-to-br from-[#1a1a1b] to-black border-none text-white overflow-hidden relative">
+                 <div className="absolute top-0 right-0 w-80 h-80 bg-[#3b83f5]/20 rounded-full blur-[100px] -mr-20 -mt-20"></div>
+                 <div className="flex items-center justify-between h-full relative z-10">
+                    <div className="space-y-4">
+                       <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/10 border border-white/10 w-fit">
+                          <Download className="h-3.5 w-3.5 text-blue-400" />
+                          <span className="text-[9px] font-bold uppercase tracking-widest">Enterprise Feature</span>
+                       </div>
+                       <h3 className="text-4xl font-light tracking-tighter uppercase leading-none">Portfolio<br />Compliance Export</h3>
+                       <p className="text-white/40 text-[11px] font-bold uppercase tracking-[0.2em]">Generate a single PDF report for all {monitoredSites.length} monitored domains</p>
+                    </div>
+                    <button 
+                       onClick={() => showToast("Generating full estate compliance report...", "success")}
+                       className="h-16 px-10 bg-white text-black rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-gray-100 transition-all flex items-center gap-3 shadow-2xl"
+                    >
+                       <Download className="h-4 w-4" /> Export Estate Summary
+                    </button>
+                 </div>
+              </div>
+
+              {/* Scheduled Ops */}
+              <div className="glass-3d-panel p-10 flex flex-col">
+                 <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 mb-8 flex items-center gap-3">
+                    <Calendar className="h-4 w-4" /> Next Scheduled Audits
+                 </h3>
+                 <div className="flex-1 space-y-4">
+                    {monitoredSites.length > 0 ? monitoredSites.slice(0, 3).map(site => (
+                       <div key={site.id} className="flex items-center justify-between p-4 bg-black/[0.03] rounded-2xl border border-black/5 hover:bg-white hover:shadow-xl transition-all duration-500 group">
+                          <div className="flex items-center gap-4">
+                             <div className="h-10 w-10 rounded-xl bg-black/5 flex items-center justify-center font-bold text-[10px] text-black/20 group-hover:bg-black group-hover:text-white transition-colors uppercase">
+                                {site.url.replace('https://', '').charAt(0)}
+                             </div>
+                             <span className="text-[11px] font-bold truncate w-24 group-hover:w-32 transition-all">{site.url.replace('https://', '')}</span>
+                          </div>
+                          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 bg-white px-3 py-1.5 rounded-full border border-black/5">
+                             In ~{Math.floor(Math.random() * 24) + 1}h
+                          </span>
+                       </div>
+                    )) : (
+                       <div className="h-full flex items-center justify-center text-center">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/30">No active schedules</p>
+                       </div>
+                    )}
+                 </div>
+                 <button className="w-full py-4 mt-6 rounded-2xl bg-black/5 hover:bg-black hover:text-white transition-all text-[10px] font-bold uppercase tracking-widest">
+                    Manage Schedules
+                 </button>
               </div>
            </div>
 

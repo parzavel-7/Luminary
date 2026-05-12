@@ -106,3 +106,20 @@ CREATE POLICY "Users can manage their own webhooks"
   ON webhooks FOR ALL
   USING (auth.uid() = user_id);
 
+-- 5. Integrations Table
+CREATE TABLE IF NOT EXISTS integrations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  org_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+  type TEXT NOT NULL, -- 'github', 'slack', 'discord'
+  config JSONB DEFAULT '{}',
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE integrations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own integrations"
+  ON integrations FOR ALL
+  USING (auth.uid() = user_id);
+

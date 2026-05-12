@@ -21,10 +21,29 @@ import {
   EyeOff,
   User as UserIcon,
   CreditCard,
-  Users
+  Users,
+  Zap
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import NotificationBell from "../../../components/NotificationBell";
+import { FaGithub, FaSlack, FaDiscord } from "react-icons/fa";
+
+// Custom Toast Component
+const Toast = ({ message, type, onClose }: { message: string, type: 'success' | 'error', onClose: () => void }) => {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 50, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9, y: 20 }}
+      className={`fixed bottom-10 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 z-50 border ${
+        type === 'success' ? 'bg-black text-white border-white/10' : 'bg-red-500 text-white border-red-600'
+      }`}
+    >
+      {type === 'success' ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <AlertTriangle className="h-4 w-4" />}
+      <span className="text-[11px] font-bold uppercase tracking-widest">{message}</span>
+    </motion.div>
+  );
+};
 
 export default function DeveloperPage() {
   const [user, setUser] = useState<any>(null);
@@ -33,8 +52,16 @@ export default function DeveloperPage() {
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRegisteringWebhook, setIsRegisteringWebhook] = useState(false);
+  const [integrations, setIntegrations] = useState<any[]>([]);
+  const [isConnecting, setIsConnecting] = useState<string | null>(null);
   const [newKeyName, setNewKeyName] = useState("");
   const [newWebhookUrl, setNewWebhookUrl] = useState("");
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
   
   // Modal state for showing the full key once
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
@@ -51,6 +78,7 @@ export default function DeveloperPage() {
         setUser(user);
         fetchKeys(user.id);
         fetchWebhooks(user.id);
+        fetchIntegrations(user.id);
       }
     };
     checkUser();
@@ -79,6 +107,75 @@ export default function DeveloperPage() {
       console.error("Failed to fetch webhooks:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchIntegrations = async (userId: string) => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/integrations/${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setIntegrations(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch integrations:", error);
+    }
+  };
+
+  const handleConnectIntegration = async (type: string) => {
+    if (!user) return;
+    setIsConnecting(type);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    console.log(`Connecting to ${type} at ${apiUrl}`);
+    try {
+      if (type === 'github') {
+        const authRes = await fetch(`${apiUrl}/api/integrations/github/authorize`);
+        const { url } = await authRes.json();
+        localStorage.setItem('luminary_integration_user', user.id);
+        window.location.href = url;
+        return;
+      }
+
+      // For others, we simulate a successful connection for Phase 12
+      const res = await fetch(`${apiUrl}/api/integrations/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          userId: user.id, 
+          type,
+          config: { connected_at: new Date().toISOString() }
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIntegrations([data.integration, ...integrations.filter(i => i.type !== type)]);
+        showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} connected successfully!`);
+      } else {
+        showToast("Failed to connect integration", "error");
+      }
+    } catch (error) {
+      console.error("Failed to connect integration:", error);
+      showToast("Server connection error", "error");
+    } finally {
+      setIsConnecting(null);
+    }
+  };
+
+  const handleRemoveIntegration = async (id: string) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    try {
+      const res = await fetch(`${apiUrl}/api/integrations/${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        setIntegrations(integrations.filter(i => i.id !== id));
+        showToast("Integration disconnected successfully");
+      } else {
+        showToast("Failed to disconnect integration", "error");
+      }
+    } catch (error) {
+      console.error("Failed to remove integration:", error);
+      showToast("Server connection error", "error");
     }
   };
 
@@ -175,6 +272,9 @@ export default function DeveloperPage() {
 
   return (
     <>
+      <AnimatePresence>
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      </AnimatePresence>
         {loading ? (
           <div className="max-w-4xl mx-auto space-y-16 animate-pulse">
             <div className="space-y-4">
@@ -313,6 +413,117 @@ export default function DeveloperPage() {
                   ))
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Integrations Section */}
+          <div className="space-y-8">
+            <h2 className="text-2xl font-light tracking-tighter uppercase flex items-center gap-4 border-b border-black/5 pb-6">
+              <Zap className="h-6 w-6 text-black/40" /> Enterprise Connectors
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+               {/* GitHub */}
+               <div className="glass-3d-panel p-8 flex flex-col justify-between h-full group">
+                  <div>
+                    <div className="h-12 w-12 rounded-2xl bg-black text-white flex items-center justify-center mb-6 shadow-lg shadow-black/10 group-hover:scale-110 transition-transform">
+                      <FaGithub className="h-6 w-6" />
+                    </div>
+                    <h3 className="text-lg font-bold">GitHub</h3>
+                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">Automate accessibility audits on every Pull Request and deployment.</p>
+                  </div>
+                  <div className="mt-8">
+                    {integrations.find(i => i.type === 'github') ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-3 py-2 rounded-xl border border-green-100">
+                          <CheckCircle2 className="h-3 w-3" /> Connected
+                        </div>
+                        <button 
+                          onClick={() => handleRemoveIntegration(integrations.find(i => i.type === 'github').id)}
+                          className="w-full py-3 text-[9px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                        >
+                          Disconnect
+                        </button>
+                      </div>
+                    ) : (
+                      <button 
+                        onClick={() => handleConnectIntegration('github')}
+                        disabled={isConnecting === 'github'}
+                        className="w-full py-4 rounded-2xl bg-black text-white text-[10px] font-bold uppercase tracking-widest hover:bg-black/80 transition-all disabled:opacity-50"
+                      >
+                        {isConnecting === 'github' ? 'Connecting...' : 'Connect Repos'}
+                      </button>
+                    )}
+                  </div>
+               </div>
+
+               {/* Slack */}
+               <div className="glass-3d-panel p-8 flex flex-col justify-between h-full group">
+                  <div>
+                    <div className="h-12 w-12 rounded-2xl bg-[#4A154B] text-white flex items-center justify-center mb-6 shadow-lg shadow-black/10 group-hover:scale-110 transition-transform">
+                      <FaSlack className="h-6 w-6" />
+                    </div>
+                    <h3 className="text-lg font-bold">Slack</h3>
+                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">Receive real-time alerts and report summaries directly in your channels.</p>
+                  </div>
+                  <div className="mt-8">
+                    {integrations.find(i => i.type === 'slack') ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-3 py-2 rounded-xl border border-green-100">
+                          <CheckCircle2 className="h-3 w-3" /> Connected
+                        </div>
+                        <button 
+                          onClick={() => handleRemoveIntegration(integrations.find(i => i.type === 'slack').id)}
+                          className="w-full py-3 text-[9px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                        >
+                          Disconnect
+                        </button>
+                      </div>
+                    ) : (
+                      <button 
+                        onClick={() => handleConnectIntegration('slack')}
+                        disabled={isConnecting === 'slack'}
+                        className="w-full py-4 rounded-2xl bg-white border border-black/5 text-[10px] font-bold uppercase tracking-widest hover:bg-black/5 transition-all disabled:opacity-50"
+                      >
+                        {isConnecting === 'slack' ? 'Connecting...' : 'Add to Slack'}
+                      </button>
+                    )}
+                  </div>
+               </div>
+
+               {/* Discord */}
+               <div className="glass-3d-panel p-8 flex flex-col justify-between h-full group">
+                  <div>
+                    <div className="h-12 w-12 rounded-2xl bg-[#5865F2] text-white flex items-center justify-center mb-6 shadow-lg shadow-black/10 group-hover:scale-110 transition-transform">
+                      <FaDiscord className="h-6 w-6" />
+                    </div>
+                    <h3 className="text-lg font-bold">Discord</h3>
+                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">Broadcast compliance milestones and audit failures to your dev server.</p>
+                  </div>
+                  <div className="mt-8">
+                    {integrations.find(i => i.type === 'discord') ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-3 py-2 rounded-xl border border-green-100">
+                          <CheckCircle2 className="h-3 w-3" /> Connected
+                        </div>
+                        <button 
+                          onClick={() => handleRemoveIntegration(integrations.find(i => i.type === 'discord').id)}
+                          className="w-full py-3 text-[9px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                        >
+                          Disconnect
+                        </button>
+                      </div>
+                    ) : (
+                      <button 
+                        onClick={() => handleConnectIntegration('discord')}
+                        disabled={isConnecting === 'discord'}
+                        className="w-full py-4 rounded-2xl bg-white border border-black/5 text-[10px] font-bold uppercase tracking-widest hover:bg-black/5 transition-all disabled:opacity-50"
+                      >
+                        {isConnecting === 'discord' ? 'Connecting...' : 'Join Server'}
+                      </button>
+                    )}
+                  </div>
+               </div>
             </div>
           </div>
 

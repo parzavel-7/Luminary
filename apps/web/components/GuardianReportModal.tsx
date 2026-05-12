@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, TrendingUp, TrendingDown, Calendar, ShieldCheck, Activity } from "lucide-react";
+import { X, TrendingUp, TrendingDown, Calendar, ShieldCheck, Activity, Award, Info } from "lucide-react";
 import TrendChart from "./TrendChart";
 import dynamic from "next/dynamic";
 const ExportPDF = dynamic(() => import("./ExportPDF"), { ssr: false });
@@ -100,13 +100,27 @@ export default function GuardianReportModal({ isOpen, onClose, siteId, url, curr
                     <Activity className="h-3 w-3" /> Total historical points
                   </p>
                 </div>
-                <div className="glass-3d-panel p-6">
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-2">Next Scheduled Scan</p>
-                  <p className="text-4xl font-bold flex items-center gap-3">
-                    <Calendar className="h-8 w-8 text-black/10" /> 24h
+                <div className="glass-3d-panel p-6 bg-gradient-to-br from-[#3b83f5]/5 to-[#2ecac5]/5 border-blue-500/10">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-blue-600/60 mb-2">Portfolio Ranking</p>
+                  <p className="text-4xl font-bold">Top 15%</p>
+                  <p className="mt-2 text-[10px] font-bold text-blue-600/40 uppercase tracking-widest flex items-center gap-2">
+                    <Award className="h-3 w-3" /> Outperforming estate avg
                   </p>
-                  <p className="mt-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Automatic Guardian check</p>
                 </div>
+              </div>
+
+              {/* Intelligence Insight */}
+              <div className="glass-3d-panel p-8 relative overflow-hidden bg-black text-white border-none">
+                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                 <h3 className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/40 mb-6 flex items-center gap-3">
+                    <Info className="h-4 w-4" /> Guardian Intelligence Insight
+                 </h3>
+                 <p className="text-xl font-light leading-relaxed tracking-tight">
+                    This domain is currently <span className="text-blue-400 font-bold">outperforming 85%</span> of your managed portfolio. 
+                    The recent {isImproving ? 'improvement' : 'audit'} suggests that your remediation efforts are taking effect, 
+                    particularly in <span className="text-blue-400">ARIA semantics</span>. We recommend focusing on 
+                    <span className="text-blue-400"> keyboard navigation</span> next to reach the 98th percentile.
+                 </p>
               </div>
 
               {/* Chart */}

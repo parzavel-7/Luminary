@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
+import { sendSlackNotification, sendDiscordNotification } from '../services/notifications';
 
 const router = Router();
 const supabase = createClient(
@@ -157,6 +158,48 @@ router.post('/github/callback', async (req: Request, res: Response) => {
 
     if (error) throw error;
     return res.status(200).json({ message: 'GitHub connected', integration: data });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @route POST /api/integrations/:id/test
+ * @desc Send a test notification to an integration
+ */
+router.post('/:id/test', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { data: integration, error } = await supabase
+      .from('integrations')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !integration) throw new Error("Integration not found");
+
+    const webhookUrl = integration.config.webhook_url;
+    if (!webhookUrl) throw new Error("No webhook URL configured for this integration");
+
+    let success = false;
+    const testPayload = {
+      title: "🚀 Luminary Connection Test",
+      message: "Connection successful! This channel is now configured to receive accessibility alerts and compliance updates.",
+      score: 98,
+      status: 'success' as const
+    };
+
+    if (integration.type === 'slack') {
+      success = await sendSlackNotification(webhookUrl, testPayload);
+    } else if (integration.type === 'discord') {
+      success = await sendDiscordNotification(webhookUrl, testPayload);
+    }
+
+    if (success) {
+      return res.status(200).json({ message: 'Test notification sent successfully' });
+    } else {
+      throw new Error("Failed to send notification. Please check your Webhook URL.");
+    }
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

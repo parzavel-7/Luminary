@@ -57,6 +57,8 @@ export default function DeveloperPage() {
   const [newKeyName, setNewKeyName] = useState("");
   const [newWebhookUrl, setNewWebhookUrl] = useState("");
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+  const [webhookModal, setWebhookModal] = useState<{ type: string, isOpen: boolean }>({ type: '', isOpen: false });
+  const [integrationWebhookUrl, setIntegrationWebhookUrl] = useState("");
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -137,6 +139,12 @@ export default function DeveloperPage() {
         return;
       }
 
+      if (type === 'slack' || type === 'discord') {
+        setWebhookModal({ type, isOpen: true });
+        setIsConnecting(null);
+        return;
+      }
+
       // For others, we simulate a successful connection for Phase 12
       const res = await fetch(`${apiUrl}/api/integrations/connect`, {
         method: 'POST',
@@ -162,6 +170,38 @@ export default function DeveloperPage() {
     }
   };
 
+  const handleSaveIntegrationWebhook = async () => {
+    if (!integrationWebhookUrl || !user) return;
+    setIsConnecting(webhookModal.type);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
+    try {
+      const res = await fetch(`${apiUrl}/api/integrations/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          userId: user.id, 
+          type: webhookModal.type,
+          config: { webhook_url: integrationWebhookUrl }
+        })
+      });
+
+      if (res.ok) {
+        showToast(`${webhookModal.type.charAt(0).toUpperCase() + webhookModal.type.slice(1)} connected successfully!`);
+        setWebhookModal({ type: '', isOpen: false });
+        setIntegrationWebhookUrl("");
+        fetchIntegrations(user.id);
+      } else {
+        showToast("Failed to connect integration", "error");
+      }
+    } catch (error) {
+      console.error("Failed to save integration webhook:", error);
+      showToast("Server connection error", "error");
+    } finally {
+      setIsConnecting(null);
+    }
+  };
+
   const handleRemoveIntegration = async (id: string) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
     try {
@@ -176,6 +216,21 @@ export default function DeveloperPage() {
       }
     } catch (error) {
       console.error("Failed to remove integration:", error);
+      showToast("Server connection error", "error");
+    }
+  };
+
+  const handleTestIntegration = async (id: string) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    try {
+      const res = await fetch(`${apiUrl}/api/integrations/${id}/test`, { method: 'POST' });
+      if (res.ok) {
+        showToast("Test notification sent!");
+      } else {
+        const data = await res.json();
+        showToast(data.error || "Failed to send test notification", "error");
+      }
+    } catch (error) {
       showToast("Server connection error", "error");
     }
   };
@@ -473,12 +528,18 @@ export default function DeveloperPage() {
                         <div className="flex items-center gap-2 text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-3 py-2 rounded-xl border border-green-100">
                           <CheckCircle2 className="h-3 w-3" /> Connected
                         </div>
-                        <button 
-                          onClick={() => handleRemoveIntegration(integrations.find(i => i.type === 'slack').id)}
-                          className="w-full py-3 text-[9px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 rounded-xl transition-colors"
-                        >
-                          Disconnect
-                        </button>
+                         <button 
+                           onClick={() => handleTestIntegration(integrations.find(i => i.type === 'slack').id)}
+                           className="w-full py-3 text-[9px] font-bold uppercase tracking-widest text-blue-500 hover:bg-blue-50 rounded-xl transition-colors mb-1"
+                         >
+                           Test Connection
+                         </button>
+                         <button 
+                           onClick={() => handleRemoveIntegration(integrations.find(i => i.type === 'slack').id)}
+                           className="w-full py-3 text-[9px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                         >
+                           Disconnect
+                         </button>
                       </div>
                     ) : (
                       <button 
@@ -507,12 +568,18 @@ export default function DeveloperPage() {
                         <div className="flex items-center gap-2 text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-3 py-2 rounded-xl border border-green-100">
                           <CheckCircle2 className="h-3 w-3" /> Connected
                         </div>
-                        <button 
-                          onClick={() => handleRemoveIntegration(integrations.find(i => i.type === 'discord').id)}
-                          className="w-full py-3 text-[9px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 rounded-xl transition-colors"
-                        >
-                          Disconnect
-                        </button>
+                         <button 
+                           onClick={() => handleTestIntegration(integrations.find(i => i.type === 'discord').id)}
+                           className="w-full py-3 text-[9px] font-bold uppercase tracking-widest text-blue-500 hover:bg-blue-50 rounded-xl transition-colors mb-1"
+                         >
+                           Test Connection
+                         </button>
+                         <button 
+                           onClick={() => handleRemoveIntegration(integrations.find(i => i.type === 'discord').id)}
+                           className="w-full py-3 text-[9px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                         >
+                           Disconnect
+                         </button>
                       </div>
                     ) : (
                       <button 
@@ -617,6 +684,74 @@ export default function DeveloperPage() {
               >
                 I have saved my key
               </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Webhook Connection Modal (Slack/Discord) */}
+      <AnimatePresence>
+        {webhookModal.isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setWebhookModal({ type: '', isOpen: false })}
+              className="absolute inset-0 bg-black/40 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-[2.5rem] p-10 shadow-2xl border border-black/10 overflow-hidden"
+            >
+              <div className="flex items-center gap-4 mb-8">
+                 <div className={`h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg ${webhookModal.type === 'slack' ? 'bg-[#4A154B] text-white' : 'bg-[#5865F2] text-white'}`}>
+                    {webhookModal.type === 'slack' ? <FaSlack className="h-6 w-6" /> : <FaDiscord className="h-6 w-6" />}
+                 </div>
+                 <div>
+                    <h3 className="text-2xl font-bold tracking-tight">Connect {webhookModal.type === 'slack' ? 'Slack' : 'Discord'}</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">Enterprise Connector</p>
+                 </div>
+              </div>
+
+              <div className="space-y-6">
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 ml-2">Incoming Webhook URL</label>
+                    <input 
+                      type="text"
+                      value={integrationWebhookUrl}
+                      onChange={(e) => setIntegrationWebhookUrl(e.target.value)}
+                      placeholder="https://hooks.slack.com/services/..."
+                      className="w-full h-14 px-6 bg-black/5 border border-black/5 rounded-2xl text-xs font-bold outline-none focus:border-black/20 transition-all shadow-inner"
+                    />
+                 </div>
+
+                 <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex gap-4">
+                    <Info className="h-5 w-5 text-blue-500 mt-1 shrink-0" />
+                    <p className="text-[10px] leading-relaxed text-blue-700/80 font-medium">
+                       Incoming webhooks allow Luminary to post automated compliance reports and PR notifications directly to your channels.
+                    </p>
+                 </div>
+
+                 <div className="flex gap-4">
+                    <button 
+                      onClick={() => setWebhookModal({ type: '', isOpen: false })}
+                      className="flex-1 py-4 rounded-full bg-white border border-black/5 text-[10px] font-bold uppercase tracking-widest hover:bg-black/5 transition-all"
+                    >
+                       Cancel
+                    </button>
+                    <button 
+                      onClick={handleSaveIntegrationWebhook}
+                      disabled={!integrationWebhookUrl || isConnecting !== null}
+                      className="flex-1 py-4 rounded-full bg-black text-white text-[10px] font-bold uppercase tracking-widest hover:bg-black/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                       {isConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                       Connect Integration
+                    </button>
+                 </div>
+              </div>
             </motion.div>
           </div>
         )}

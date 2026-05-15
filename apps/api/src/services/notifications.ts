@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-
 /**
  * Service to handle outgoing notifications to third-party platforms
  */

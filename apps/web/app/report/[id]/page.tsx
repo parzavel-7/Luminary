@@ -130,8 +130,12 @@ export default function ReportPage() {
             </div>
           </div>
 
-          <div className="md:col-span-8 grid grid-cols-2 gap-6">
-             <div className="glass-3d-panel p-8 space-y-8">
+          <div className="md:col-span-8 grid grid-cols-2 gap-x-12 gap-y-12 relative">
+             {/* Cross Dividers */}
+             <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-black/10 -translate-y-1/2 z-0"></div>
+             <div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-black/10 -translate-x-1/2 z-0"></div>
+
+             <div className="glass-3d-panel p-8 space-y-8 relative z-10">
                 <ShieldAlert className="h-6 w-6 text-red-600" />
                 <div>
                    <h4 className="text-4xl font-light tracking-tighter">
@@ -140,7 +144,8 @@ export default function ReportPage() {
                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-600/60 mt-1">Critical Risks</p>
                 </div>
              </div>
-             <div className="glass-3d-panel p-8 space-y-8">
+
+             <div className="glass-3d-panel p-8 space-y-8 relative z-10">
                 <AlertCircle className="h-6 w-6 text-orange-600" />
                 <div>
                    <h4 className="text-4xl font-light tracking-tighter">
@@ -149,7 +154,8 @@ export default function ReportPage() {
                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-600/60 mt-1">Serious Alerts</p>
                 </div>
              </div>
-             <div className="glass-3d-panel p-8 space-y-8">
+
+             <div className="glass-3d-panel p-8 space-y-8 relative z-10">
                 <CheckCircle2 className="h-6 w-6 text-green-600" />
                 <div>
                    <h4 className="text-4xl font-light tracking-tighter">
@@ -158,7 +164,8 @@ export default function ReportPage() {
                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-green-600/60 mt-1">Minor Elements</p>
                 </div>
              </div>
-             <div className="glass-3d-panel p-8 space-y-8">
+
+             <div className="glass-3d-panel p-8 space-y-8 relative z-10">
                 <Clock className="h-6 w-6 text-black/40" />
                 <div>
                    <h4 className="text-lg font-bold">{new Date(results.created_at).toLocaleDateString()}</h4>

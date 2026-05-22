@@ -404,23 +404,23 @@ export default function DashboardPage() {
                           </div>
                           <div className="flex gap-2">
                              <button 
-                               onClick={() => handleTriggerScan(site.id)}
+                               onClick={(e) => { e.stopPropagation(); handleTriggerScan(site.id); }}
                                className="h-12 w-12 rounded-full bg-black/5 flex items-center justify-center hover:bg-black hover:text-white transition-all"
                                title="Trigger Scan Now"
                              >
                                 <Activity className="h-5 w-5" />
                              </button>
                              <button 
-                               onClick={() => handleToggleMonitoring(site.id, site.active)}
+                               onClick={(e) => { e.stopPropagation(); handleToggleMonitoring(site.id, site.active); }}
                                className={`h-12 w-12 rounded-full flex items-center justify-center transition-all ${site.active ? 'bg-amber-500/10 text-amber-600 hover:bg-amber-600 hover:text-white' : 'bg-green-500/10 text-green-600 hover:bg-green-600 hover:text-white'}`}
                                title={site.active ? 'Pause Monitoring' : 'Resume Monitoring'}
                              >
                                 < ShieldCheck className="h-5 w-5" />
                              </button>
-                             <Link href={`/scan?url=${encodeURIComponent(site.url)}`} className="h-12 w-12 rounded-full bg-black/5 flex items-center justify-center hover:bg-black hover:text-white transition-all">
+                             <Link href={`/scan?url=${encodeURIComponent(site.url)}`} onClick={(e) => e.stopPropagation()} className="h-12 w-12 rounded-full bg-black/5 flex items-center justify-center hover:bg-black hover:text-white transition-all">
                                 <ExternalLink className="h-5 w-5" />
                              </Link>
-                             <button onClick={() => handleDeleteMonitoredSite(site.id)} className="h-12 w-12 rounded-full bg-red-500/10 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all">
+                             <button onClick={(e) => { e.stopPropagation(); handleDeleteMonitoredSite(site.id); }} className="h-12 w-12 rounded-full bg-red-500/10 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all">
                                 <Trash2 className="h-5 w-5" />
                              </button>
                           </div>

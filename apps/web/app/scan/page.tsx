@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { 
@@ -33,7 +33,6 @@ const ExportPDF = dynamic(() => import("../../components/ExportPDF"), {
 });
 
 export default function ScanPage() {
-  const searchParams = useSearchParams();
   const router = useRouter();
   const [scanUrl, setScanUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,14 +43,15 @@ export default function ScanPage() {
 
   // On mount: grab URL from params, save to state, then clean the address bar
   useEffect(() => {
-    const rawUrl = searchParams.get("url");
+    const params = new URLSearchParams(window.location.search);
+    const rawUrl = params.get("url");
     if (!rawUrl) {
       router.push("/");
       return;
     }
     setScanUrl(rawUrl);
     window.history.replaceState(null, '', '/scan');
-  }, [searchParams, router]);
+  }, [router]);
 
   // Set dynamic browser tab title
   useEffect(() => {

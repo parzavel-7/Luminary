@@ -24,6 +24,13 @@ interface ShareModalProps {
   title: string;
 }
 
+interface ShareOption {
+  name: string;
+  icon: React.ReactElement;
+  color: string;
+  href: string;
+}
+
 export default function ShareModal({ isOpen, onClose, url, title }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
 
@@ -36,28 +43,28 @@ export default function ShareModal({ isOpen, onClose, url, title }: ShareModalPr
   const encodedUrl = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(`Luminary Accessibility Audit for ${title}`);
 
-  const shareOptions = [
+  const shareOptions: ShareOption[] = [
     { 
       name: "Email", 
-      icon: <IoMail className="h-5 w-5" />, 
+      icon: <IoMail className="h-6 w-6" />, 
       color: "hover:bg-blue-500", 
       href: `mailto:?subject=${encodedTitle}&body=Check out this accessibility audit: ${encodedUrl}` 
     },
     { 
       name: "X / Twitter", 
-      icon: <FaXTwitter className="h-5 w-5" />, 
+      icon: <FaXTwitter className="h-6 w-6" />, 
       color: "hover:bg-black", 
       href: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}` 
     },
     { 
       name: "LinkedIn", 
-      icon: <FaLinkedin className="h-5 w-5" />, 
+      icon: <FaLinkedin className="h-6 w-6" />, 
       color: "hover:bg-[#0077b5]", 
       href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}` 
     },
     { 
       name: "Facebook", 
-      icon: <FaFacebook className="h-5 w-5" />, 
+      icon: <FaFacebook className="h-6 w-6" />, 
       color: "hover:bg-[#1877f2]", 
       href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}` 
     }
@@ -137,8 +144,7 @@ export default function ShareModal({ isOpen, onClose, url, title }: ShareModalPr
                           className={`flex flex-col items-center justify-center p-6 bg-white/60 backdrop-blur-md border border-white rounded-[2.5rem] gap-4 transition-all duration-700 hover:shadow-2xl hover:-translate-y-2 group ${option.color} hover:text-white hover:border-transparent`}
                         >
                            <div className="p-4 bg-black/5 rounded-[1.2rem] group-hover:bg-white/20 transition-colors">
-                              {/* Re-rendering icons with bigger size */}
-                              {React.cloneElement(option.icon as React.ReactElement, { className: "h-6 w-6" })}
+                              {option.icon}
                            </div>
                            <span className="text-[10px] font-black uppercase tracking-widest text-center">{option.name.split(' ')[0]}</span>
                         </a>

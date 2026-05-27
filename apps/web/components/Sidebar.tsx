@@ -54,15 +54,15 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
   ];
 
   return (
-    <aside className="w-80 h-screen border-r border-black/5 bg-white/60 backdrop-blur-3xl p-8 flex flex-col gap-12 sticky top-0 left-0 z-20 shadow-xl shadow-black/[0.02]">
-      <Link href="/" className="flex items-center gap-4 group px-2">
+    <aside className="w-80 h-screen border-r border-black/5 bg-white/60 backdrop-blur-3xl p-8 flex flex-col gap-8 sticky top-0 left-0 z-20 shadow-xl shadow-black/[0.02]">
+      <Link href="/" className="flex items-center gap-4 group px-2 mb-4">
         <div className="h-10 w-10 flex items-center justify-center transition-transform duration-1000 group-hover:scale-110">
            <Image src="/logo.png" alt="Logo" width={50} height={50} className="scale-[2.8]" />
         </div>
         <span className="font-bold text-2xl tracking-tight text-gradient">Luminary</span>
       </Link>
 
-      <nav className="space-y-1.5 overflow-y-auto pr-2 custom-scrollbar">
+      <nav className="space-y-1.5 overflow-y-auto pr-2 custom-scrollbar flex-1">
         {navItems.map((item) => (
           <NavItem 
             key={item.href}
@@ -72,27 +72,27 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
             active={pathname === item.href}
           />
         ))}
-
-        <div className="pt-8 mt-12 border-t border-black/5 space-y-4">
-          <div className="flex items-center gap-4 px-5 py-4 bg-black/5 rounded-3xl">
-            <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-[#3b83f5] to-[#2ecac5] flex items-center justify-center font-black text-white shadow-md">
-               {(user?.user_metadata?.username || user?.email)?.charAt(0).toUpperCase() || "U"}
-            </div>
-            <div className="overflow-hidden">
-               <p className="text-[11px] font-bold uppercase tracking-widest truncate">{user?.user_metadata?.username || user?.email?.split('@')[0] || "User"}</p>
-               <p className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-[0.2em]">Operative Level 3</p>
-            </div>
-          </div>
-          {user?.id && <NotificationBell userId={user.id} />}
-          <button 
-            onClick={onLogout}
-            className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl hover:bg-red-500/5 text-muted-foreground hover:text-red-600 transition-all group"
-          >
-             <LogOut className="h-5 w-5" />
-             <span className="text-[11px] font-bold uppercase tracking-widest">Terminate</span>
-          </button>
-        </div>
       </nav>
+
+      <div className="pt-6 border-t border-black/5 space-y-4">
+        <div className="flex items-center gap-4 px-5 py-4 bg-black/5 rounded-3xl">
+          <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-[#3b83f5] to-[#2ecac5] flex items-center justify-center font-black text-white shadow-md">
+             {(user?.user_metadata?.username || user?.email)?.charAt(0).toUpperCase() || "U"}
+          </div>
+          <div className="overflow-hidden">
+             <p className="text-[11px] font-bold uppercase tracking-widest truncate">{user?.user_metadata?.username || user?.email?.split('@')[0] || "User"}</p>
+             <p className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-[0.2em]">Operative Level 3</p>
+          </div>
+        </div>
+        {user?.id && <NotificationBell userId={user.id} />}
+        <button 
+          onClick={onLogout}
+          className="w-full flex items-center gap-4 px-6 py-3 rounded-2xl hover:bg-red-500/5 text-muted-foreground hover:text-red-600 transition-all group"
+        >
+           <LogOut className="h-5 w-5" />
+           <span className="text-[11px] font-bold uppercase tracking-widest">Log Out</span>
+        </button>
+      </div>
     </aside>
   );
 }

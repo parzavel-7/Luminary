@@ -1,0 +1,17 @@
+{
+  "name": "@luminary/extension",
+  "version": "0.1.0",
+  "description": "Luminary Accessibility Auditor Chrome Extension — Inspect WCAG scores instantly.",
+  "main": "dist/popup.js",
+  "scripts": {
+    "build": "tsc && node copy-assets.js",
+    "dev": "tsc --watch"
+  },
+  "keywords": ["accessibility", "a11y", "chrome-extension", "wcag", "audit"],
+  "license": "MIT",
+  "devDependencies": {
+    "@repo/typescript-config": "*",
+    "@types/chrome": "^0.0.306",
+    "typescript": "5.9.2"
+  }
+}

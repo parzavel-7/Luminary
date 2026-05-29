@@ -4,7 +4,7 @@ import { scanUrl } from '../services/crawler';
 import { analyzeViolations } from '../services/ai';
 import { calculateScore } from '../services/scorer';
 import { createClient } from '@supabase/supabase-js';
-import { sendScanAlert } from '../services/email';
+import { sendScanAlert, sendScanFailureAlert } from '../services/email';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -156,6 +156,50 @@ scanWorker.on('completed', (job) => {
   console.log(`[Worker] Job ${job.id} completed successfully`);
 });
 
-scanWorker.on('failed', (job, err) => {
+scanWorker.on('failed', async (job, err) => {
   console.error(`[Worker] Job ${job?.id} failed:`, err);
+  if (!job) return;
+
+  const { url, userId, monitoredSiteId } = job.data;
+
+  try {
+    // 1. Insert an in-app notification indicating failure
+    console.log(`[Worker] Creating error notification for user ${userId} regarding ${url}...`);
+    const { error: notifError } = await supabase
+      .from('notifications')
+      .insert([
+        {
+          user_id: userId,
+          title: `Audit Failed: ${url}`,
+          body: `The background audit for ${url} failed after multiple attempts. Reason: ${err.message}`,
+          type: 'error',
+          read: false
+        }
+      ]);
+
+    if (notifError) {
+      console.error('[Worker] Failed to insert error notification:', notifError);
+    } else {
+      console.log(`[Worker] Error notification created successfully`);
+    }
+
+    // 2. Fetch user's email address and send failure report
+    if (monitoredSiteId) {
+      console.log(`[Worker] Fetching user email for ${userId} to send failure alert...`);
+      const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+      
+      if (userError || !userData?.user) {
+        console.error('[Worker] Failed to fetch user info for email alert:', userError);
+        return;
+      }
+
+      const email = userData.user.email;
+      if (email) {
+        console.log(`[Worker] Sending failure email alert to ${email}...`);
+        await sendScanFailureAlert(email, url, err.message);
+      }
+    }
+  } catch (cleanUpError) {
+    console.error('[Worker] Error running failure handlers:', cleanUpError);
+  }
 });

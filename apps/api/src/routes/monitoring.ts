@@ -46,27 +46,38 @@ router.post('/register', async (req: Request, res: Response) => {
 
     if (error) throw error;
 
-    // Trigger initial scan and schedule repeatable scans in background
-    // Wrap in try/catch so registration still succeeds even if queue has issues
-    try {
-      await scanQueue.add(`initial-scan-${data.id}`, {
-        url,
-        userId,
-        monitoredSiteId: data.id
-      });
+      // Trigger initial scan and schedule repeatable scans in background
+      // Wrap in try/catch so registration still succeeds even if queue has issues
+      try {
+        await scanQueue.add(`initial-scan-${data.id}`, {
+          url,
+          userId,
+          monitoredSiteId: data.id
+        }, {
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 10000 // 10 seconds starting delay (10s, 20s, 40s...)
+          }
+        });
 
-      // BullMQ repeat syntax — use 'cron' key
-      let cron = '0 0 * * 1'; // Default: Weekly (Monday at midnight)
-      if (frequency === 'daily') cron = '0 0 * * *';
-      if (frequency === 'monthly') cron = '0 0 1 * *';
+        // BullMQ repeat syntax — use 'cron' key
+        let cron = '0 0 * * 1'; // Default: Weekly (Monday at midnight)
+        if (frequency === 'daily') cron = '0 0 * * *';
+        if (frequency === 'monthly') cron = '0 0 1 * *';
 
-      await scanQueue.add(`monitor-scan-${data.id}`, {
-        url,
-        userId,
-        monitoredSiteId: data.id
-      }, {
-        repeat: { pattern: cron }
-      });
+        await scanQueue.add(`monitor-scan-${data.id}`, {
+          url,
+          userId,
+          monitoredSiteId: data.id
+        }, {
+          repeat: { pattern: cron },
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 10000
+          }
+        });
 
       console.log(`Site ${url} registered for ${frequency} monitoring`);
     } catch (queueError: any) {
@@ -154,6 +165,12 @@ router.post('/:id/trigger', async (req: Request, res: Response) => {
       url: site.url,
       userId: site.user_id,
       monitoredSiteId: site.id
+    }, {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 10000
+      }
     });
 
     return res.status(200).json({ message: 'Scan triggered successfully' });

@@ -14,6 +14,20 @@ const isUpstash = connectionUrl.includes('upstash.io');
 export const redisConnection = new Redis(connectionUrl, {
   maxRetriesPerRequest: null, // Required for BullMQ
   tls: (isUpstash || (!isLocal && connectionUrl.startsWith('rediss'))) ? {} : undefined,
+  keepAlive: 30000, // 30 seconds TCP KeepAlive
+  retryStrategy(times) {
+    // Exponential backoff strategy for retrying connection, max delay of 3000ms
+    const delay = Math.min(times * 100, 3000);
+    return delay;
+  },
+  reconnectOnError(err) {
+    const targetError = 'READONLY';
+    if (err.message.slice(0, targetError.length) === targetError) {
+      // Reconnect on READONLY error (common in cloud Redis cluster primary failover)
+      return true;
+    }
+    return false;
+  }
 });
 
 redisConnection.on('error', (err) => {

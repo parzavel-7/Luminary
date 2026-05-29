@@ -1,0 +1,27 @@
+{
+  "name": "@luminary/cli",
+  "version": "0.1.0",
+  "description": "Luminary CLI — Run WCAG accessibility audits and enforce quality gates in CI/CD pipelines.",
+  "bin": {
+    "luminary": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "keywords": ["accessibility", "wcag", "a11y", "cli", "luminary", "audit"],
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "ora": "^8.0.1"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "*",
+    "@types/node": "^22.15.3",
+    "typescript": "5.9.2"
+  }
+}

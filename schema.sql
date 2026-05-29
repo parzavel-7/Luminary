@@ -36,6 +36,12 @@ CREATE TABLE IF NOT EXISTS organizations (
 
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
 
+-- Clean up existing policies to allow re-runs
+DROP POLICY IF EXISTS "Members can view their orgs" ON organizations;
+DROP POLICY IF EXISTS "Authenticated users can create orgs" ON organizations;
+DROP POLICY IF EXISTS "Owners can update their org" ON organizations;
+DROP POLICY IF EXISTS "Owners can delete their org" ON organizations;
+
 -- Members can view their own orgs
 CREATE POLICY "Members can view their orgs"
   ON organizations FOR SELECT
@@ -69,6 +75,12 @@ CREATE TABLE IF NOT EXISTS organization_members (
 );
 
 ALTER TABLE organization_members ENABLE ROW LEVEL SECURITY;
+
+-- Clean up existing policies
+DROP POLICY IF EXISTS "Members can view org roster" ON organization_members;
+DROP POLICY IF EXISTS "Admins can add members" ON organization_members;
+DROP POLICY IF EXISTS "Admins can update member roles" ON organization_members;
+DROP POLICY IF EXISTS "Admins or self can remove members" ON organization_members;
 
 -- Members can see who else is in their org
 CREATE POLICY "Members can view org roster"
@@ -106,6 +118,10 @@ CREATE TABLE IF NOT EXISTS profiles (
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
+-- Clean up existing policies
+DROP POLICY IF EXISTS "Users can view their own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can update their own profile" ON profiles;
+
 CREATE POLICY "Users can view their own profile"
   ON profiles FOR SELECT
   USING (auth.uid() = id);
@@ -130,6 +146,13 @@ CREATE TABLE IF NOT EXISTS scans (
 ALTER TABLE scans ADD COLUMN IF NOT EXISTS org_id UUID REFERENCES organizations(id);
 
 ALTER TABLE scans ENABLE ROW LEVEL SECURITY;
+
+-- Clean up existing and legacy policies
+DROP POLICY IF EXISTS "Users can view their own scans" ON scans;
+DROP POLICY IF EXISTS "Owner or org member can view scans" ON scans;
+DROP POLICY IF EXISTS "Authenticated users can insert scans" ON scans;
+DROP POLICY IF EXISTS "Owner or org admin can update scans" ON scans;
+DROP POLICY IF EXISTS "Owner or org admin can delete scans" ON scans;
 
 -- Owner or org member can view
 CREATE POLICY "Owner or org member can view scans"
@@ -181,6 +204,16 @@ ALTER TABLE monitored_sites ADD COLUMN IF NOT EXISTS org_id UUID REFERENCES orga
 
 ALTER TABLE monitored_sites ENABLE ROW LEVEL SECURITY;
 
+-- Clean up existing and legacy policies
+DROP POLICY IF EXISTS "Users can view their own monitored sites" ON monitored_sites;
+DROP POLICY IF EXISTS "Users can insert their own monitored sites" ON monitored_sites;
+DROP POLICY IF EXISTS "Users can update their own monitored sites" ON monitored_sites;
+DROP POLICY IF EXISTS "Users can delete their own monitored sites" ON monitored_sites;
+DROP POLICY IF EXISTS "Owner or org member can view monitored sites" ON monitored_sites;
+DROP POLICY IF EXISTS "Authenticated users can insert monitored sites" ON monitored_sites;
+DROP POLICY IF EXISTS "Owner or org admin can update monitored sites" ON monitored_sites;
+DROP POLICY IF EXISTS "Owner or org admin can delete monitored sites" ON monitored_sites;
+
 CREATE POLICY "Owner or org member can view monitored sites"
   ON monitored_sites FOR SELECT
   USING (
@@ -224,6 +257,11 @@ CREATE TABLE IF NOT EXISTS webhooks (
 
 ALTER TABLE webhooks ENABLE ROW LEVEL SECURITY;
 
+-- Clean up existing and legacy policies
+DROP POLICY IF EXISTS "Users can manage their own webhooks" ON webhooks;
+DROP POLICY IF EXISTS "Owner or org member can view webhooks" ON webhooks;
+DROP POLICY IF EXISTS "Owner or org admin can manage webhooks" ON webhooks;
+
 CREATE POLICY "Owner or org member can view webhooks"
   ON webhooks FOR SELECT
   USING (
@@ -252,6 +290,11 @@ CREATE TABLE IF NOT EXISTS integrations (
 );
 
 ALTER TABLE integrations ENABLE ROW LEVEL SECURITY;
+
+-- Clean up existing and legacy policies
+DROP POLICY IF EXISTS "Users can manage their own integrations" ON integrations;
+DROP POLICY IF EXISTS "Owner or org member can view integrations" ON integrations;
+DROP POLICY IF EXISTS "Owner or org admin can manage integrations" ON integrations;
 
 CREATE POLICY "Owner or org member can view integrations"
   ON integrations FOR SELECT
@@ -282,6 +325,13 @@ CREATE TABLE IF NOT EXISTS organization_invites (
 );
 
 ALTER TABLE organization_invites ENABLE ROW LEVEL SECURITY;
+
+-- Clean up existing and legacy policies
+DROP POLICY IF EXISTS "Anyone can view invites by token" ON organization_invites;
+DROP POLICY IF EXISTS "Org admins can manage invites" ON organization_invites;
+DROP POLICY IF EXISTS "Users can view invites for their email" ON organization_invites;
+DROP POLICY IF EXISTS "Org admins can update invites" ON organization_invites;
+DROP POLICY IF EXISTS "Org admins can delete invites" ON organization_invites;
 
 -- Authenticated users can view invites addressed to their email (for accept page)
 CREATE POLICY "Users can view invites for their email"
